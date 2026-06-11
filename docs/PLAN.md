@@ -115,7 +115,7 @@ Task 2 與 Task 1 可平行；Task 5/6/7 在 Task 4 後可平行。
 **影響範圍**：
 - Create: `src/editor.ts`（EditorView：行號、lang-markdown、`onChange` 回呼）
 - Create: `src/preview.ts`（`update(html)` 更新 `#preview`）
-- Create: `src/main.ts`（組裝：editor onChange → debounce 150ms → render → preview）
+- Create: `src/main.ts`（組裝：editor onChange → debounce 50ms → render → preview）
 
 **依賴**：Task 1 + Task 2
 

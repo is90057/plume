@@ -82,6 +82,17 @@ main {
 
 #editor {
   border-right: 1px solid #d9d9d9;
+  overflow: hidden; /* 捲動交給 CM6 的 .cm-scroller */
+}
+
+/* ===== CM6 編輯器整合 ===== */
+
+#editor .cm-editor {
+  height: 100%;
+}
+
+#editor .cm-editor.cm-focused {
+  outline: none; /* 全高 pane 上的預設 focus 框是視覺干擾 */
 }
 
 /* ===== 預覽區 GitHub 風 typography（一律 scope 在 #preview 之下） ===== */

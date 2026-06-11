@@ -64,7 +64,7 @@
 | 編號 | 功能 | 描述 | 優先級 |
 |------|------|------|--------|
 | F-01 | Markdown 編輯器 | CodeMirror 6：行號、Markdown 語法高亮、搜尋取代、undo/redo | P0 |
-| F-02 | 即時預覽 | GFM 渲染（表格/任務清單/刪除線/autolink）+ 程式碼高亮，輸入後 debounce 150ms 更新 | P0 |
+| F-02 | 即時預覽 | GFM 渲染（表格/任務清單/刪除線/autolink）+ 程式碼高亮，輸入後 debounce 50ms 更新（原定 150ms，2026-06-11 依實際手感調整） | P0 |
 | F-03 | 檔案操作 | 開檔（Cmd+O）/ 存檔（Cmd+S）/ 另存（Cmd+Shift+S）/ 新增（Cmd+N），dirty 追蹤與關閉攔截 | P0 |
 | F-04 | XSS 防護 | 渲染輸出經 DOMPurify 消毒 | P0 |
 | F-05 | 同步捲動 | 編輯區 → 預覽區單向比例捲動 | P1 |

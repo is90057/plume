@@ -20,7 +20,7 @@ flowchart TB
         pscope["plugin-persisted-scope"]
         opener["plugin-opener"]
     end
-    editor -- "updateListener<br/>debounce 150ms" --> renderer --> preview
+    editor -- "updateListener<br/>debounce 50ms" --> renderer --> preview
     main --> editor & file & recent
     file -- IPC --> dialog & fs
     recent -- IPC --> store
@@ -73,7 +73,7 @@ md 字串 → markdown-it.render() → raw HTML → DOMPurify.sanitize() → 預
 | highlight 回呼 | highlight.js，僅註冊子集：js/ts/python/rust/bash/json/yaml/html/css/sql/go/java/c/cpp/markdown/diff；未標注或未知語言 fallback plaintext，**不開自動偵測** | 控制 bundle 與渲染時間 |
 | DOMPurify | 預設白名單（擋 `<script>`、event handler 屬性、`javascript:` URI） | 見安全章節 |
 
-渲染觸發：CM6 `updateListener` → `docChanged` → debounce 150ms → `render()` → `preview.update()`。同步呼叫鏈，無 async、無 race。
+渲染觸發：CM6 `updateListener` → `docChanged` → debounce 50ms → `render()` → `preview.update()`。同步呼叫鏈，無 async、無 race。（debounce 原定 150ms，2026-06-11 Task 3 驗收時依子超實際手感調為 50ms，注音組字驗證正常。）
 
 ## 資料模型
 
