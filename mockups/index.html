@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plume — 五個設計方向</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f6f4ef;
+    --ink: #211f1c;
+    --ink-soft: #6d685e;
+    --line: #ddd7ca;
+    --mono: "IBM Plex Mono", monospace;
+    --sans: "Noto Sans TC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 56px 32px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  header .sub {
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  header .note {
+    margin-top: 18px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--ink-soft);
+    max-width: 56em;
+  }
+  .grid {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: #fffdf9;
+    border: 1px solid var(--line);
+    padding: 22px 22px 18px;
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+    cursor: pointer;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(33, 31, 28, 0.10);
+    border-color: #c8c1b0;
+  }
+  .card:active { transform: translateY(-1px); }
+  .card:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+  .card .no {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .card h2 {
+    margin-top: 8px;
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .card .fr {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+  .card p {
+    margin-top: 12px;
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: #45413a;
+    min-height: 4.6em;
+  }
+  .card .diff {
+    margin-top: 10px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+  }
+  .card .diff strong { color: var(--ink); font-weight: 500; }
+  .swatches {
+    margin-top: 16px;
+    display: flex;
+    gap: 6px;
+  }
+  .swatches span {
+    width: 28px;
+    height: 14px;
+    border: 1px solid rgba(0,0,0,0.12);
+  }
+  footer {
+    margin-top: 48px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.9;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { transition: none; }
+    .card:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Plume 🪶 五個設計方向</h1>
+    <div class="sub">DoMySelf mockups · 2026-06-11 · 同一份文件,五種性格</div>
+    <p class="note">每個方向從 Plume 的特質(輕、快、書寫、羽毛)獨立推導,13 軸參數彼此拉開,不是同一套設計換色。點卡片開啟完整 mockup;五個檔案共用同一份範例內容,方便直接比較氣質差異。</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="01-plume-doie.html">
+      <span class="no">01</span>
+      <h2>Plume d'Oie</h2>
+      <div class="fr">鵝毛筆・法式信紙</div>
+      <p>法式書房的安靜。信紙冷白與鐵膽墨水藍黑,Fraunces 標題、襯線預覽,hairline 細線與紙纖維質感。優雅、私密、緩慢。</p>
+      <div class="diff"><strong>記憶點:</strong>未儲存的變更是一滴蠟封紅,落在狀態列中央。</div>
+      <div class="swatches">
+        <span style="background:#FAF8F4"></span><span style="background:#1C2D4F"></span><span style="background:#5A6B8C"></span><span style="background:#A33B2E"></span>
+      </div>
+    </a>
+
+    <a class="card" href="02-cirrus.html">
+      <span class="no">02</span>
+      <h2>Cirrus</h2>
+      <div class="fr">卷雲・晨光飛行</div>
+      <p>輕到感覺不到工具存在。晨空底色緩慢流動,雙欄像兩片雲浮著,青灰 cyan 主色配一點晨光金。空氣、光、清晨。</p>
+      <div class="diff"><strong>記憶點:</strong>分隔線是一根懸浮的羽毛軸,按鈕 hover 像被氣流托起。</div>
+      <div class="swatches">
+        <span style="background:#E9F1F5"></span><span style="background:#FCFEFF"></span><span style="background:#51808F"></span><span style="background:#C9952E"></span>
+      </div>
+    </a>
+
+    <a class="card" href="03-vol-de-nuit.html">
+      <span class="no">03</span>
+      <h2>Vol de Nuit</h2>
+      <div class="fr">夜航・儀表板</div>
+      <p>聖修伯里的深夜駕駛艙——plume 本來就是法文。夜空深底、月白文字、儀表金與星光青,JetBrains Mono 配 Literata 夜讀襯線。</p>
+      <div class="diff"><strong>記憶點:</strong>狀態列是飛行儀表:字數=高度、行列=航向、渲染=ETA。</div>
+      <div class="swatches">
+        <span style="background:#14161F"></span><span style="background:#E6E9F0"></span><span style="background:#E8B84B"></span><span style="background:#7FD1C9"></span>
+      </div>
+    </a>
+
+    <a class="card" href="04-markup.html">
+      <span class="no">04</span>
+      <h2>Markup</h2>
+      <div class="fr">語法即裝飾</div>
+      <p>Markdown 的符號自己就是 UI。紙白高對比、2px 硬框與硬陰影、全等寬字混排,工具向格式致敬。玩心、直白、結構外露。</p>
+      <div class="diff"><strong>記憶點:</strong>中縫是一條「render →」轉換帶;預覽區塊 hover 浮出它的 md 符號。</div>
+      <div class="swatches">
+        <span style="background:#FCFBF7"></span><span style="background:#16140F"></span><span style="background:#0E7C7B"></span><span style="background:#D96C2C"></span>
+      </div>
+    </a>
+
+    <a class="card" href="05-inkstone.html">
+      <span class="no">05</span>
+      <h2>Inkstone</h2>
+      <div class="fr">硯・墨階</div>
+      <p>純墨五階加留白,唯一彩色是硃砂。霞鶩文楷寫 markdown 原始碼,EB Garamond 收西文,無框線、墨暈代界。空、緩、文人。</p>
+      <div class="diff"><strong>記憶點:</strong>未儲存=一枚硃砂印浮著,儲存即落印。</div>
+      <div class="swatches">
+        <span style="background:#F5F2EB"></span><span style="background:#1F1D1A"></span><span style="background:#6B675E"></span><span style="background:#B3402A"></span>
+      </div>
+    </a>
+  </div>
+
+  <footer>
+    五方向 13 軸對照:色溫 62/38/30/50/48 · 明度 78/88/18/92/82 · 能量 25/35/20/60/12<br />
+    字體零重複:Fraunces+Newsreader+Plex Mono / General Sans+Lora+Fira Code / JetBrains Mono+Literata / Space Mono+Martian Mono / 霞鶩文楷+EB Garamond
+  </footer>
+</div>
+</body>
+</html>

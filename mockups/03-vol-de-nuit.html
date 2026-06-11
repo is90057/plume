@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plume — 羽毛與墨水.md</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Vol de Nuit — 夜航儀表 token ===== */
+:root {
+  --night: #14161F;   /* 夜空 */
+  --panel: #1B1E2B;   /* 儀表面板 */
+  --ink:   #E6E9F0;   /* 月白 */
+  --gold:  #E8B84B;   /* 儀表金 */
+  --teal:  #7FD1C9;   /* 星光青 */
+  --muted: #8A93AD;   /* 霧藍 */
+  --line:  #2A2F42;
+  --screen:#10131D;   /* 儀表顯示屏 */
+  --mono: "JetBrains Mono", monospace;
+  --serif: "Literata", "Noto Serif TC", serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* 夜空 + 極稀疏星點(僅透出於 chrome / toolbar / statusbar 縫隙) */
+html, body { height: 100%; }
+body {
+  font-family: var(--mono);
+  color: var(--ink);
+  background:
+    radial-gradient(1.5px 1.5px at 78% 3%, rgba(230,233,240,.55), transparent 60%),
+    radial-gradient(1px 1px at 22% 5%, rgba(230,233,240,.35), transparent 60%),
+    radial-gradient(1px 1px at 60% 97%, rgba(230,233,240,.28), transparent 60%),
+    var(--night);
+  overflow: hidden;
+}
+
+.window { height: 100vh; display: flex; flex-direction: column; }
+
+/* ===== 視窗 chrome ===== */
+.chrome {
+  position: relative;
+  display: flex; align-items: center;
+  height: 40px; padding: 0 14px;
+  flex: none;
+}
+.dots { display: flex; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-r { background: #FF5F57; } .dot-y { background: #FEBC2E; } .dot-g { background: #28C840; }
+.win-title {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  font-size: 12.5px; color: var(--muted); letter-spacing: .04em;
+}
+
+/* ===== 工具列 ===== */
+.toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 14px; flex: none;
+  border-bottom: 1px solid var(--line);
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 12.5px; color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s, color .2s, transform .08s;
+}
+.btn svg { flex: none; }
+.btn:hover {
+  border-color: rgba(232,184,75,.6);
+  color: var(--gold);
+  box-shadow: 0 0 10px rgba(232,184,75,.22);
+}
+.btn:active { transform: scale(.98); }
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.dropdown { margin-left: auto; color: var(--muted); }
+.dropdown:hover { color: var(--gold); }
+
+/* ===== 主區雙欄 ===== */
+.workspace {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 8px minmax(0,1fr);
+}
+.pane {
+  background: var(--panel);
+  overflow: auto;
+  /* 玻璃儀表面:頂緣微高光 + 極淡內陰影 */
+  box-shadow: inset 0 1px 0 rgba(230,233,240,.03), inset 0 2px 18px rgba(0,0,0,.22);
+  animation: rise .45s cubic-bezier(.2,.7,.3,1) backwards;
+}
+.editor-pane { animation-delay: .06s; }
+.preview-pane { animation-delay: .16s; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+
+.divider {
+  display: flex; align-items: center; justify-content: center;
+  cursor: col-resize;
+}
+.divider::before {
+  content: ""; width: 1px; height: 100%;
+  background: var(--line);
+  transition: background .2s, box-shadow .2s;
+}
+.divider:hover::before { background: var(--gold); box-shadow: 0 0 8px rgba(232,184,75,.45); }
+
+/* ===== 編輯區(行號 + 手工語法高亮)===== */
+.editor-pane { padding: 14px 0; font-size: 13px; line-height: 1.75; }
+.code-line {
+  display: grid; grid-template-columns: 4ch 1fr;
+  border-left: 2px solid transparent;
+  padding-right: 16px;
+}
+.ln {
+  color: var(--muted); font-size: 11px; line-height: inherit;
+  text-align: right; padding-right: 12px;
+  border-right: 1px solid var(--line);
+  user-select: none;
+}
+.lc { padding-left: 14px; white-space: pre-wrap; word-break: break-word; min-height: 1.75em; }
+.cursor-line { border-left-color: var(--gold); background: rgba(232,184,75,.055); }
+.cursor-line .ln { color: var(--gold); }
+.caret {
+  display: inline-block; width: 2px; height: 1.15em;
+  background: var(--gold); vertical-align: text-bottom;
+  box-shadow: 0 0 6px rgba(232,184,75,.8);
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+
+.md-mark  { color: var(--teal); }
+.md-h     { color: var(--ink); font-weight: 700; }
+.md-sym   { color: var(--muted); }
+.md-b     { font-weight: 700; }
+.md-i     { font-style: italic; }
+.md-q     { color: var(--muted); font-style: italic; }
+.md-done  { color: var(--gold); }
+.md-link  { color: var(--teal); }
+.md-url   { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.md-num   { color: var(--gold); }
+.md-fence { color: var(--teal); }
+.in-fence { background: rgba(16,19,29,.6); }
+.c-fn  { color: var(--teal); }
+.c-num { color: var(--gold); }
+
+/* ===== 預覽區(夜讀 serif)===== */
+.preview-pane { padding: 30px 34px 44px; font-family: var(--serif); font-size: 15.5px; line-height: 1.85; }
+.preview-pane > * + * { margin-top: 1em; }
+.preview-pane h1 {
+  font-size: 28px; font-weight: 700; letter-spacing: .02em;
+  padding-bottom: .45em; border-bottom: 1px solid var(--line);
+}
+.preview-pane h2 { font-size: 18.5px; font-weight: 700; margin-top: 1.8em; }
+.preview-pane h2::before {
+  content: ""; display: inline-block; width: 14px; height: 1px;
+  background: var(--teal); opacity: .75;
+  margin-right: 10px; vertical-align: middle;
+}
+.preview-pane em { font-style: italic; }
+.preview-pane blockquote {
+  border-left: 3px solid var(--teal);
+  background: rgba(127,209,201,.045);
+  padding: .55em 1.1em; color: var(--muted); font-style: italic;
+}
+.preview-pane a { color: var(--teal); text-underline-offset: 3px; transition: color .18s; }
+.preview-pane a:hover { color: var(--gold); }
+.preview-pane a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* 任務清單:自繪方框 */
+.tasks { list-style: none; }
+.tasks li { display: flex; align-items: center; gap: 10px; margin: 7px 0; }
+.cb {
+  flex: none; width: 15px; height: 15px; border-radius: 3px;
+  border: 1px solid var(--muted);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.done .cb { background: var(--gold); border-color: var(--gold); }
+.done .task-text { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(138,147,173,.6); }
+
+/* 表格:航班時刻表 */
+.preview-pane table { border-collapse: collapse; width: 100%; margin-top: 1.2em; }
+.preview-pane th {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .22em; color: var(--muted); text-align: left;
+  padding: 9px 12px;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.preview-pane td { padding: 9px 12px; border-bottom: 1px solid rgba(42,47,66,.6); }
+.preview-pane th:last-child, .preview-pane td:last-child { text-align: right; }
+td.mod { font-family: var(--mono); font-size: 13px; }
+td.ms  { font-family: var(--mono); font-size: 13px; color: var(--gold); }
+
+/* 程式碼塊:內凹儀表顯示屏 */
+.preview-pane pre {
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.8;
+  background: var(--screen);
+  border-radius: 8px;
+  padding: 14px 18px;
+  overflow-x: auto;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,.55),
+              0 0 0 1px rgba(127,209,201,.14),
+              0 0 16px rgba(127,209,201,.05);
+}
+
+/* ===== 狀態列 = 飛行儀表盤 ===== */
+.statusbar {
+  flex: none;
+  display: flex; align-items: center;
+  height: 44px; padding: 0 16px;
+  border-top: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(230,233,240,.02);
+}
+.gauges { display: flex; align-items: center; gap: 16px; }
+.gauge { display: flex; align-items: baseline; gap: 8px; }
+.g-label { font-size: 10px; letter-spacing: .22em; color: var(--muted); }
+.g-num { font-size: 16px; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+.g-unit { font-size: 10px; color: var(--muted); margin-left: 2px; }
+.ticks {
+  width: 21px; height: 10px; opacity: .9;
+  background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 5px);
+}
+.save-dial { margin-left: auto; display: flex; align-items: center; gap: 9px; }
+.save-text { font-size: 11px; letter-spacing: .12em; color: var(--muted); }
+.needle { transform-origin: 14px 14px; }
+.save-dial:hover .needle { animation: sway .9s ease-in-out infinite; }
+@keyframes sway { 0%, 100% { transform: rotate(-3.5deg); } 50% { transform: rotate(3.5deg); } }
+
+/* ===== 響應式:<900px 摺上下 ===== */
+@media (max-width: 900px) {
+  .workspace { grid-template-columns: 1fr; grid-template-rows: minmax(0,1fr) 8px minmax(0,1fr); }
+  .divider { cursor: row-resize; }
+  .divider::before { width: 100%; height: 1px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="window">
+
+  <header class="chrome">
+    <div class="dots" aria-hidden="true">
+      <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+    </div>
+    <span class="win-title">Plume — 羽毛與墨水.md</span>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="工具列">
+    <button type="button" class="btn">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h6"/><path d="M12 18v-6M9 15h6"/></svg>
+      新增
+    </button>
+    <button type="button" class="btn">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8V5a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v1"/><path d="M2 8h17.6a1.5 1.5 0 0 1 1.45 1.88l-2.1 7.62A2 2 0 0 1 17 19H4a2 2 0 0 1-2-2z"/></svg>
+      開啟
+    </button>
+    <button type="button" class="btn">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+      儲存
+    </button>
+    <button type="button" class="btn">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+      匯出
+    </button>
+    <button type="button" class="btn dropdown" aria-haspopup="menu" aria-expanded="false">
+      最近檔案
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+
+  <main class="workspace">
+
+    <section class="pane editor-pane" aria-label="Markdown 原始碼編輯區">
+      <div class="code-line"><span class="ln" aria-hidden="true">1</span><span class="lc"><span class="md-mark">#</span> <span class="md-h">羽毛與墨水</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">2</span><span class="lc"></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">3</span><span class="lc">寫作不該等待工具。<span class="md-sym">**</span><span class="md-b">Plume</span><span class="md-sym">**</span> 在 <span class="md-sym">*</span><span class="md-i">50 毫秒</span><span class="md-sym">*</span> 內把文字變成排版。</span></div>
+      <div class="code-line cursor-line"><span class="ln" aria-hidden="true">4</span><span class="lc"><span class="caret"></span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">5</span><span class="lc"><span class="md-mark">&gt;</span> <span class="md-q">輕的東西,才能飛。</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">6</span><span class="lc"></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">7</span><span class="lc"><span class="md-mark">##</span> <span class="md-h">今日待辦</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">8</span><span class="lc"></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">9</span><span class="lc"><span class="md-mark">-</span> <span class="md-done">[x]</span> 把草稿移進 Plume</span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">10</span><span class="lc"><span class="md-mark">-</span> <span class="md-sym">[ ]</span> 匯出 HTML 給編輯</span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">11</span><span class="lc"><span class="md-mark">-</span> <span class="md-sym">[ ]</span> 讀完《夜間飛行》</span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">12</span><span class="lc"></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">13</span><span class="lc"><span class="md-mark">##</span> <span class="md-h">渲染管線</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">14</span><span class="lc"></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">15</span><span class="lc"><span class="md-sym">|</span> 階段 <span class="md-sym">|</span> 模組 <span class="md-sym">|</span> 耗時 <span class="md-sym">|</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">16</span><span class="lc"><span class="md-sym">|------|------|------|</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">17</span><span class="lc"><span class="md-sym">|</span> 解析 <span class="md-sym">|</span> markdown-it <span class="md-sym">|</span> <span class="md-num">~3ms</span> <span class="md-sym">|</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">18</span><span class="lc"><span class="md-sym">|</span> 消毒 <span class="md-sym">|</span> DOMPurify <span class="md-sym">|</span> <span class="md-num">~1ms</span> <span class="md-sym">|</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">19</span><span class="lc"></span></div>
+      <div class="code-line in-fence"><span class="ln" aria-hidden="true">20</span><span class="lc"><span class="md-fence">```ts</span></span></div>
+      <div class="code-line in-fence"><span class="ln" aria-hidden="true">21</span><span class="lc">editor.<span class="c-fn">onChange</span>(<span class="c-fn">debounce</span>(<span class="c-num">50</span>, (doc) <span class="c-fn">=&gt;</span> {</span></div>
+      <div class="code-line in-fence"><span class="ln" aria-hidden="true">22</span><span class="lc">  preview.<span class="c-fn">render</span>(<span class="c-fn">sanitize</span>(md.<span class="c-fn">render</span>(doc)));</span></div>
+      <div class="code-line in-fence"><span class="ln" aria-hidden="true">23</span><span class="lc">}));</span></div>
+      <div class="code-line in-fence"><span class="ln" aria-hidden="true">24</span><span class="lc"><span class="md-fence">```</span></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">25</span><span class="lc"></span></div>
+      <div class="code-line"><span class="ln" aria-hidden="true">26</span><span class="lc">羽毛筆時代,書寫是<span class="md-sym">[</span><span class="md-link">一種儀式</span><span class="md-sym">](</span><span class="md-url">https://example.com</span><span class="md-sym">)</span>。</span></div>
+    </section>
+
+    <div class="divider" role="separator" aria-orientation="vertical" aria-label="調整雙欄寬度"></div>
+
+    <section class="pane preview-pane" aria-label="預覽區">
+      <h1>羽毛與墨水</h1>
+      <p>寫作不該等待工具。<strong>Plume</strong> 在 <em>50 毫秒</em> 內把文字變成排版。</p>
+      <blockquote><p>輕的東西,才能飛。</p></blockquote>
+      <h2>今日待辦</h2>
+      <ul class="tasks">
+        <li class="done"><span class="cb" aria-hidden="true"><svg viewBox="0 0 10 8" width="9" height="7"><path d="M1 4.2 3.6 6.8 9 1.2" fill="none" stroke="#14161F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="task-text">把草稿移進 Plume</span></li>
+        <li><span class="cb" aria-hidden="true"></span><span class="task-text">匯出 HTML 給編輯</span></li>
+        <li><span class="cb" aria-hidden="true"></span><span class="task-text">讀完《夜間飛行》</span></li>
+      </ul>
+      <h2>渲染管線</h2>
+      <table>
+        <thead><tr><th>階段</th><th>模組</th><th>耗時</th></tr></thead>
+        <tbody>
+          <tr><td>解析</td><td class="mod">markdown-it</td><td class="ms">~3ms</td></tr>
+          <tr><td>消毒</td><td class="mod">DOMPurify</td><td class="ms">~1ms</td></tr>
+        </tbody>
+      </table>
+      <pre><code>editor.<span class="c-fn">onChange</span>(<span class="c-fn">debounce</span>(<span class="c-num">50</span>, (doc) <span class="c-fn">=&gt;</span> {
+  preview.<span class="c-fn">render</span>(<span class="c-fn">sanitize</span>(md.<span class="c-fn">render</span>(doc)));
+}));</code></pre>
+      <p>羽毛筆時代,書寫是<a href="https://example.com">一種儀式</a>。</p>
+    </section>
+
+  </main>
+
+  <footer class="statusbar" aria-label="狀態列(飛行儀表盤)">
+    <div class="gauges">
+      <div class="gauge"><span class="g-label">ALT</span><span><span class="g-num" data-count="318" data-pad="3">000</span><span class="g-unit">字</span></span></div>
+      <div class="ticks" aria-hidden="true"></div>
+      <div class="gauge"><span class="g-label">HDG</span><span><span class="g-num" data-count="42" data-pad="3">000</span></span></div>
+      <div class="ticks" aria-hidden="true"></div>
+      <div class="gauge"><span class="g-label">ETA</span><span><span class="g-num" data-count="50">0</span><span class="g-unit">ms</span></span></div>
+    </div>
+    <div class="save-dial" title="已儲存">
+      <svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true">
+        <circle cx="14" cy="14" r="11.5" fill="#10131D" stroke="#2A2F42"/>
+        <line x1="3.5" y1="14" x2="6" y2="14" stroke="#8A93AD" stroke-width="1.2"/>
+        <line x1="14" y1="3.5" x2="14" y2="6" stroke="#8A93AD" stroke-width="1.2"/>
+        <line x1="21.4" y1="6.6" x2="19.7" y2="8.3" stroke="#E8B84B" stroke-width="1.4"/>
+        <g class="needle">
+          <line x1="14" y1="14" x2="19" y2="9" stroke="#E8B84B" stroke-width="2" stroke-linecap="round"/>
+        </g>
+        <circle cx="14" cy="14" r="1.6" fill="#E8B84B"/>
+      </svg>
+      <span class="save-text">已儲存</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* 儀表開機:讀數 0 → 目標值,280ms;reduced-motion 直接到位 */
+(function () {
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-count]').forEach(function (el) {
+    var target = +el.dataset.count;
+    var pad = +(el.dataset.pad || 1);
+    var fmt = function (v) { return String(v).padStart(pad, '0'); };
+    if (reduce) { el.textContent = fmt(target); return; }
+    var t0 = performance.now(), dur = 280;
+    var tick = function (now) {
+      var p = Math.min((now - t0) / dur, 1);
+      el.textContent = fmt(Math.round(target * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+})();
+</script>
+</body>
+</html>
