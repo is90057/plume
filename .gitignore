@@ -1,0 +1,21 @@
+# Claude Code 私有工作流（永不入 repo）
+.claude/
+
+# 依賴與建置產物
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# 環境與本機檔
+.env
+*.local
+*.log
+
+# 編輯器
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# macOS
+.DS_Store
