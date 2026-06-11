@@ -45,7 +45,7 @@ async function refreshRecentUI(): Promise<void> {
   for (const f of files) {
     const opt = document.createElement("option");
     opt.value = f.path;
-    opt.textContent = f.path.split("/").pop() ?? f.path;
+    opt.textContent = f.path.split(/[/\\]/).pop() ?? f.path; // Windows 路徑為反斜線
     opt.title = f.path;
     recentSelect.append(opt);
   }
@@ -74,10 +74,10 @@ document.querySelector("#btn-open")!.addEventListener("click", doOpen);
 document.querySelector("#btn-save")!.addEventListener("click", doSave);
 document.querySelector("#btn-export")!.addEventListener("click", () => void exportHtml());
 
-// ----- 快捷鍵 Cmd+N / Cmd+O / Cmd+S / Cmd+Shift+S -----
+// ----- 快捷鍵 Cmd(mac)/Ctrl(win) + N / O / S / Shift+S -----
 
 window.addEventListener("keydown", (e) => {
-  if (!e.metaKey) return;
+  if (!e.metaKey && !e.ctrlKey) return;
   switch (e.key.toLowerCase()) {
     case "n":
       e.preventDefault();

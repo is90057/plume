@@ -28,7 +28,7 @@ export function getDocState(): Readonly<DocState> {
 
 function fileName(): string {
   if (doc.path === null) return "未命名";
-  return doc.path.split("/").pop() ?? doc.path;
+  return doc.path.split(/[/\\]/).pop() ?? doc.path; // Windows 路徑為反斜線
 }
 
 async function updateTitle(): Promise<void> {
