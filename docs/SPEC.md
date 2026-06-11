@@ -56,7 +56,7 @@ flowchart TB
 | 外開連結 | `plugin-opener` `openUrl()` | `opener:allow-open-url` |
 | 關閉攔截／視窗標題 | `onCloseRequested()` / `destroy()` / `setTitle()` | `core:window:allow-close`, `core:window:allow-destroy`, `core:window:allow-set-title`（dirty 攔截確認後以 `destroy()` 關閉，避免 `close()` 重觸發事件） |
 
-關鍵機制：`plugin-fs` 預設 scope 不含使用者任意路徑；經 `plugin-dialog` 選取的路徑會被動態加入 fs scope，`plugin-persisted-scope` 再把這份授權跨 session 保存——這是「最近檔案重啟後仍可開」的依賴鏈，缺一不可。前半段（dialog 授權 → fs scope → readTextFile）已於 2026-06-11 Task 0 IPC spike 實測通過；persisted-scope 跨 session 段留待 Task 6 驗收（重啟後開啟最近檔案）。
+關鍵機制：`plugin-fs` 預設 scope 不含使用者任意路徑；經 `plugin-dialog` 選取的路徑會被動態加入 fs scope，`plugin-persisted-scope` 再把這份授權跨 session 保存——這是「最近檔案重啟後仍可開」的依賴鏈，缺一不可。此鏈路已完整實測通過：前半段（dialog 授權 → fs scope → readTextFile）於 2026-06-11 Task 0 IPC spike 驗證；persisted-scope 跨 session 段於同日 Task 6 驗收驗證（重啟後不經 dialog 直開最近檔案成功）。
 
 ## 渲染管線規格
 

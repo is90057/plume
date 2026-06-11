@@ -26,6 +26,11 @@ export function getContent(): string {
   return view!.state.doc.toString();
 }
 
+// 編輯區真正的捲動容器（.cm-scroller），供 preview 同步捲動監聽（Task 5）。
+export function getScrollDOM(): HTMLElement {
+  return view!.scrollDOM;
+}
+
 export function setContent(text: string): void {
   view!.dispatch({
     changes: { from: 0, to: view!.state.doc.length, insert: text },

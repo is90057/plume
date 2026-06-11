@@ -22,6 +22,11 @@ const windowMocks = vi.hoisted(() => ({
   onCloseRequested: vi.fn(),
   destroy: vi.fn(),
 }));
+const recentMocks = vi.hoisted(() => ({
+  getRecent: vi.fn(),
+  addRecent: vi.fn(),
+  removeRecent: vi.fn(),
+}));
 
 vi.mock("@tauri-apps/plugin-dialog", () => dialogMocks);
 vi.mock("@tauri-apps/plugin-fs", () => fsMocks);
@@ -29,6 +34,7 @@ vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: () => windowMocks,
 }));
 vi.mock("../src/editor", () => editorMocks);
+vi.mock("../src/recent", () => recentMocks);
 
 async function loadFileModule() {
   vi.resetModules();
@@ -50,6 +56,7 @@ describe("file", () => {
     expect(editorMocks.setContent).toHaveBeenCalledWith("# 哈囉");
     expect(file.getDocState()).toEqual({ path: "/tmp/a.md", dirty: false });
     expect(windowMocks.setTitle).toHaveBeenCalledWith("a.md");
+    expect(recentMocks.addRecent).toHaveBeenCalledWith("/tmp/a.md"); // Task 6：開啟成功記錄
   });
 
   it("test_file_save_dirtyDoc_writesAndClearsDirty", async () => {
@@ -102,5 +109,18 @@ describe("file", () => {
     expect(editorMocks.setContent).toHaveBeenCalledTimes(1);
     expect(file.getDocState()).toEqual({ path: "/tmp/a.md", dirty: false });
     expect(dialogMocks.message).toHaveBeenCalledOnce();
+  });
+
+  it("test_recent_open_missingFile_removesEntry", async () => {
+    fsMocks.readTextFile.mockRejectedValue(new Error("ENOENT"));
+
+    const file = await loadFileModule();
+    await file.openRecent("/tmp/gone.md"); // 最近清單點到已刪除的檔
+
+    // SPEC 錯誤處理：非阻斷提示 + 自動從最近清單移除，現有文件不受影響
+    expect(editorMocks.setContent).not.toHaveBeenCalled();
+    expect(file.getDocState()).toEqual({ path: null, dirty: false });
+    expect(dialogMocks.message).toHaveBeenCalledOnce();
+    expect(recentMocks.removeRecent).toHaveBeenCalledWith("/tmp/gone.md");
   });
 });

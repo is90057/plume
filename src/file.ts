@@ -5,6 +5,7 @@ import { ask, message, open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getContent, setContent } from "./editor";
+import { addRecent, removeRecent } from "./recent";
 
 interface DocState {
   path: string | null; // null = 未命名新文件
@@ -77,15 +78,28 @@ export async function openFile(): Promise<void> {
   if (!(await confirmLoseChanges())) return;
   const selected = await open({ multiple: false, filters: MD_FILTERS });
   if (selected === null) return;
+  await loadPath(selected);
+}
+
+// 最近檔案以路徑直接開啟，不走 dialog——fs scope 來自當次 dialog 授權，
+// 或 persisted-scope 跨 session 恢復（Task 6 驗收點：重啟後仍可開）
+export async function openRecent(path: string): Promise<void> {
+  if (!(await confirmLoseChanges())) return;
+  await loadPath(path);
+}
+
+async function loadPath(path: string): Promise<void> {
   try {
-    const content = await readTextFile(selected);
+    const content = await readTextFile(path);
     loadContent(content);
-    doc.path = selected;
+    doc.path = path;
     doc.dirty = false;
     await updateTitle();
+    await addRecent(path);
   } catch (e) {
-    // SPEC 錯誤處理：讀檔失敗不載入、不改變現有編輯內容，非阻斷提示
+    // SPEC 錯誤處理：讀檔失敗不載入、不改變現有編輯內容，非阻斷提示＋自最近清單移除
     await message(`無法開啟檔案：${String(e)}`, { title: "開啟失敗", kind: "error" });
+    await removeRecent(path);
   }
 }
 
@@ -100,7 +114,9 @@ export async function saveAs(): Promise<boolean> {
     defaultPath: doc.path ?? "未命名.md",
   });
   if (target === null) return false;
-  return writeTo(target);
+  const ok = await writeTo(target);
+  if (ok) await addRecent(target); // PLAN：open/saveAs 成功後記錄（saveFile 既有路徑不重複記）
+  return ok;
 }
 
 async function writeTo(path: string): Promise<boolean> {
