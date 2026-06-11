@@ -4,6 +4,7 @@
 # 依賴與建置產物
 node_modules/
 dist/
+coverage/
 src-tauri/target/
 src-tauri/gen/schemas/
 
