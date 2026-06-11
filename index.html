@@ -2,18 +2,26 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="/src/styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Plume</title>
+    <link rel="stylesheet" href="/src/style.css" />
     <script type="module" src="/src/main.ts" defer></script>
   </head>
 
   <body>
-    <main class="container">
-      <h1>Plume — Task 0 IPC Spike</h1>
-      <p>驗證「dialog 授權路徑 → fs scope」承重牆鏈路（docs/PLAN.md Task 0）</p>
-      <button id="spike-open" type="button">選擇 .md 檔案測試讀取</button>
-      <pre id="spike-output" style="text-align: left; white-space: pre-wrap;"></pre>
+    <header id="toolbar">
+      <button id="btn-new" type="button">新增</button>
+      <button id="btn-open" type="button">開啟</button>
+      <button id="btn-save" type="button">儲存</button>
+      <button id="btn-export" type="button">匯出</button>
+      <select id="recent-list" aria-label="最近檔案">
+        <option value="" selected disabled>最近檔案</option>
+      </select>
+    </header>
+
+    <main>
+      <div id="editor"></div>
+      <div id="preview"></div>
     </main>
   </body>
 </html>
