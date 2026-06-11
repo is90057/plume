@@ -1,6 +1,26 @@
 # Plume 🪶
 
-輕量 Markdown 編輯器——左邊寫、右邊即時看渲染結果。Tauri 2 桌面應用，開了就能寫，存了就能走。支援 GFM（表格、任務清單、刪除線）與程式碼語法高亮，可開啟/儲存本機 `.md` 檔、匯出 HTML。為日常筆記、長文寫作與技術文件預覽而生。
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-2-FFC131.svg)](https://tauri.app/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)](https://www.typescriptlang.org/)
+[![CodeMirror](https://img.shields.io/badge/CodeMirror-6-D30707.svg)](https://codemirror.net/)
+
+[English](README_EN.md)
+
+輕量 Markdown 編輯器——左邊寫，右邊即時看渲染。Tauri 2 桌面應用，開了就能寫，存了就能走。
+
+## 功能特色
+
+| 功能 | 說明 |
+|------|------|
+| **即時預覽** | 輸入後 50ms 內更新；GFM 表格、任務清單、刪除線、autolink |
+| **編輯器** | CodeMirror 6：行號、Markdown 語法高亮、搜尋取代、undo/redo；注音輸入法組字實測不斷字 |
+| **程式碼高亮** | highlight.js 只註冊常用語言子集，不為冷門語言付出載入成本 |
+| **安全渲染** | 所有輸出過 DOMPurify 消毒——開別人給的含 `<script>` 的 `.md` 也不怕 |
+| **同步捲動** | 編輯區捲動，預覽區按比例跟隨 |
+| **匯出 HTML** | 產出單一自帶樣式的 `.html`，瀏覽器開啟與預覽所見一致 |
+| **最近檔案** | 最近 10 筆跨重啟有效，檔案存取權限一併記住 |
+| **快捷鍵** | Cmd/Ctrl + N 新檔、O 開檔、S 存檔、Shift+S 另存；未儲存變更關閉視窗會攔下確認 |
 
 ## 系統架構
 
@@ -16,7 +36,7 @@ flowchart LR
     subgraph Rust["Rust 核心（src-tauri）"]
         Plugins["官方 Plugins<br/>dialog / fs / store<br/>persisted-scope / opener"]
     end
-    Editor -- "onChange (debounce 150ms)" --> Renderer
+    Editor -- "onChange (debounce 50ms)" --> Renderer
     Renderer --> Preview
     File -- IPC --> Plugins
     Recent -- IPC --> Plugins
@@ -39,31 +59,35 @@ flowchart LR
 | Tauri Plugins | 2.x | dialog / fs / store / persisted-scope / opener |
 | Vitest | 3.x | 單元測試（渲染管線為主） |
 
-## 安裝指引
+## 安裝
 
-### 前置需求
+### 直接下載
+
+從 [Releases](https://github.com/tznthou/plume/releases) 下載對應平台的安裝檔：
+
+| 平台 | 安裝檔 |
+|------|--------|
+| macOS（Apple Silicon） | `Plume_x.y.z_aarch64.dmg` |
+| macOS（Intel） | `Plume_x.y.z_x64.dmg` |
+| Windows x64 | `Plume_x.y.z_x64-setup.exe`（NSIS）或 `Plume_x.y.z_x64_en-US.msi` |
+
+> **macOS 首次開啟**：安裝檔未經 Apple 公證（個人工具，沒走付費簽章），Gatekeeper 會攔下。對 Plume.app 按右鍵 →「打開」確認一次即可；或在終端機執行 `xattr -cr /Applications/Plume.app`。
+>
+> **Windows**：由 CI 打包，尚未在實機完整驗證（輸入法、檔案對話框等行為），遇到問題請開 issue。
+
+### 從原始碼建置
+
+前置需求：
 
 - macOS 13+（開發機已驗證：rustc 1.88 / Node 22 / Xcode CLT）
 - Rust toolchain（`rustup`）
 - Node.js 22+ 與 npm
 
-### 開發
-
 ```bash
-git clone <repo-url> && cd markdown-tool
+git clone https://github.com/tznthou/plume.git && cd plume
 npm install
 npm run tauri dev     # 啟動開發視窗（含熱更新）
-```
-
-### 建置
-
-```bash
 npm run tauri build   # 產出 .app 於 src-tauri/target/release/bundle/
-```
-
-### 測試
-
-```bash
 npm run test          # Vitest 單元測試
 ```
 
@@ -85,8 +109,35 @@ markdown-tool/
 │   ├── capabilities/       # IPC 權限宣告（最小化原則）
 │   └── tauri.conf.json     # 視窗、CSP、bundle 設定
 ├── tests/                  # Vitest 測試
-└── docs/                   # 規格文件
-    ├── PRD.md              # 需求與使用者故事
-    ├── SPEC.md             # 架構、模組職責、IPC 邊界、安全
-    └── PLAN.md             # 實作路線圖與冒煙清單
+├── docs/                   # 規格文件
+│   ├── PRD.md              # 需求與使用者故事
+│   ├── SPEC.md             # 架構、模組職責、IPC 邊界、安全
+│   └── PLAN.md             # 實作路線圖與冒煙清單
+├── LICENSE                 # Apache 2.0
+├── README.md               # 中文說明（本檔）
+└── README_EN.md            # English README
 ```
+
+---
+
+## 隨想
+
+### 為什麼做這個
+
+我需要一個可以編輯、可以閱讀、而且輕量的 Markdown 工具。
+
+會大量讀寫 `.md`，其實是 AI 時代帶來的。以前 Markdown 對我來說是活在 Obsidian 底下的格式——概念上它跟 TXT 沒兩樣，純文字而已。但現在 AI 的產出、專案文件、技術筆記全是 Markdown，它成了日常要面對的格式，不再是某個筆記軟體的附屬品。
+
+麻煩在於，Markdown 原始碼讀得懂，渲染後長什麼樣卻肉眼看不出來——表格、任務清單、程式碼區塊都得渲染過才見真章。它不像 Word 點開就是排好的版面，於是每次開啟、每次編輯，都得借別的工具：開一整套 Obsidian vault，丟給瀏覽器外掛，或者 push 上 GitHub 只為看一眼。就「讀一份文件」這件事而言，繞得太遠了。
+
+市面上的工具很多，但我就是想要一個自己的版本：開了就能寫，存了就能走，沒有 vault、沒有帳號、沒有外掛生態。連名字都是特地想過的——Plume，法文裡的羽毛，也是落筆的羽毛筆。輕，而且是拿來寫字的。
+
+---
+
+## 授權
+
+本專案採用 [Apache 2.0](LICENSE) 授權。
+
+## 作者
+
+tznthou - [tznthou@gmail.com](mailto:tznthou@gmail.com)

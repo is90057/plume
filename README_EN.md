@@ -1,0 +1,141 @@
+# Plume 🪶
+
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-2-FFC131.svg)](https://tauri.app/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)](https://www.typescriptlang.org/)
+[![CodeMirror](https://img.shields.io/badge/CodeMirror-6-D30707.svg)](https://codemirror.net/)
+
+[中文](README.md)
+
+A lightweight Markdown editor — write on the left, watch it render on the right. Tauri 2 desktop app: opens fast, saves your file, gets out of the way.
+
+## Features
+
+| Feature | What it does |
+|---------|--------------|
+| **Live preview** | Updates within 50ms of typing; GFM tables, task lists, strikethrough, autolinks |
+| **Editor** | CodeMirror 6: line numbers, Markdown syntax highlighting, search & replace, undo/redo; CJK input methods tested — composition never breaks mid-character |
+| **Code highlighting** | highlight.js with a curated language subset — no payload tax for languages you never use |
+| **Safe rendering** | Every render passes through DOMPurify — opening someone else's `.md` with a stray `<script>` is a non-event |
+| **Synced scrolling** | Scroll the editor and the preview follows proportionally |
+| **HTML export** | Produces a single self-styled `.html` that renders exactly like the preview |
+| **Recent files** | Last 10 files survive restarts, file-access permissions included |
+| **Shortcuts** | Cmd/Ctrl + N new, O open, S save, Shift+S save-as; closing with unsaved changes prompts first |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Frontend["WebView frontend (Vanilla TS + Vite)"]
+        Editor["editor.ts<br/>CodeMirror 6"]
+        Renderer["renderer.ts<br/>markdown-it + hljs<br/>+ DOMPurify"]
+        Preview["preview.ts<br/>preview updates + synced scroll"]
+        File["file.ts<br/>open / save / export<br/>document state"]
+        Recent["recent.ts<br/>recent files"]
+    end
+    subgraph Rust["Rust core (src-tauri)"]
+        Plugins["official plugins<br/>dialog / fs / store<br/>persisted-scope / opener"]
+    end
+    Editor -- "onChange (debounce 50ms)" --> Renderer
+    Renderer --> Preview
+    File -- IPC --> Plugins
+    Recent -- IPC --> Plugins
+    Preview -- "external links via IPC" --> Plugins
+```
+
+**Design principle:** the entire Markdown pipeline stays in the frontend — synchronous, zero IPC, zero race conditions. Rust handles file I/O, dialogs, and OS integration only. That split is where Tauri's memory advantage over Electron comes from, and it sidesteps the trap of moving parsing into Rust just to hand the gains back in IPC serialization.
+
+## Tech stack
+
+| Tech | Version | Role |
+|------|---------|------|
+| Tauri | 2.x | Desktop shell (Rust core + system WebView) |
+| TypeScript + Vite | TS 5.x / Vite (via create-tauri-app) | Frontend language and build tooling, zero UI framework |
+| CodeMirror | 6 (`codemirror` meta package + `@codemirror/lang-markdown`) | Editor: line numbers, Markdown highlighting, search & replace, IME support |
+| markdown-it | 14.x | Markdown → HTML (GFM: tables and strikethrough built in, linkify on) |
+| markdown-it-task-lists | 2.x | GFM task-list checkboxes |
+| highlight.js | 11.x | Code block highlighting (curated language subset only) |
+| DOMPurify | 3.x | XSS sanitization of rendered output (non-negotiable, see SPEC) |
+| Tauri Plugins | 2.x | dialog / fs / store / persisted-scope / opener |
+| Vitest | 3.x | Unit tests (rendering pipeline focus) |
+
+## Installation
+
+### Download
+
+Grab the installer for your platform from [Releases](https://github.com/tznthou/plume/releases):
+
+| Platform | File |
+|----------|------|
+| macOS (Apple Silicon) | `Plume_x.y.z_aarch64.dmg` |
+| macOS (Intel) | `Plume_x.y.z_x64.dmg` |
+| Windows x64 | `Plume_x.y.z_x64-setup.exe` (NSIS) or `Plume_x.y.z_x64_en-US.msi` |
+
+> **First launch on macOS:** the app isn't notarized (personal tool, no paid certificate), so Gatekeeper will balk. Right-click Plume.app → "Open" and confirm once, or run `xattr -cr /Applications/Plume.app`.
+>
+> **Windows:** packaged by CI but not fully field-tested (IME behavior, file dialogs). Open an issue if something breaks.
+
+### Build from source
+
+Prerequisites:
+
+- macOS 13+ (verified dev setup: rustc 1.88 / Node 22 / Xcode CLT)
+- Rust toolchain (`rustup`)
+- Node.js 22+ and npm
+
+```bash
+git clone https://github.com/tznthou/plume.git && cd plume
+npm install
+npm run tauri dev     # dev window with hot reload
+npm run tauri build   # bundles .app into src-tauri/target/release/bundle/
+npm run test          # Vitest unit tests
+```
+
+## Project layout
+
+```
+markdown-tool/
+├── index.html              # layout skeleton: toolbar + split panes
+├── src/                    # frontend (Vanilla TS)
+│   ├── main.ts             # entry point: module wiring, shortcut registration
+│   ├── editor.ts           # CodeMirror 6 wrapper
+│   ├── renderer.ts         # markdown-it + hljs + DOMPurify pipeline
+│   ├── preview.ts          # preview updates, synced scroll, external link handling
+│   ├── file.ts             # open/save/save-as/HTML export, document state (path, dirty)
+│   ├── recent.ts           # recent files (plugin-store)
+│   └── style.css           # layout + preview typography
+├── src-tauri/              # Rust core
+│   ├── src/lib.rs          # Tauri bootstrap + plugin registration
+│   ├── capabilities/       # IPC permission declarations (least privilege)
+│   └── tauri.conf.json     # window, CSP, bundle config
+├── tests/                  # Vitest tests
+├── docs/                   # specs (written in Chinese)
+│   ├── PRD.md              # requirements and user stories
+│   ├── SPEC.md             # architecture, module boundaries, IPC, security
+│   └── PLAN.md             # roadmap and smoke checklist
+├── LICENSE                 # Apache 2.0
+├── README.md               # Chinese README
+└── README_EN.md            # this file
+```
+
+---
+
+## Reflections
+
+### Why this exists
+
+I read and write far more Markdown than I ever signed up for. That's an AI-era thing: model output, project docs, technical notes — these days it all arrives as `.md`. Markdown used to be something that lived inside Obsidian for me; conceptually it's plain text, no different from opening a TXT. In practice, though, every open and every edit meant reaching for some other tool.
+
+The catch is that a Markdown file never shows you its rendered self. The source is readable, but tables, task lists, and code blocks only take shape once rendered — unlike a Word document, which opens already laid out. So the routine became: spin up an entire Obsidian vault, hand the file to a browser extension, or push it to GitHub just to see how one file looks. A long detour for "let me read this."
+
+There are plenty of Markdown editors around. I simply wanted one of my own: opens instantly, previews as you type, saves and steps aside. No vault, no account, no plugin ecosystem. Even the name was deliberate — plume, the French word for a feather, and for the quill you write with. Light, and made for writing.
+
+---
+
+## License
+
+This project is licensed under [Apache 2.0](LICENSE).
+
+## Author
+
+tznthou - [tznthou@gmail.com](mailto:tznthou@gmail.com)
