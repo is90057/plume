@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plume — Inkstone 硯・墨階</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- 霞鶩文楷（含 LXGW WenKai Mono）+ EB Garamond 襯線英數 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap">
+<style>
+/* ===== 墨階五色 + 宣紙 + 硃砂（唯一彩色） ===== */
+:root {
+  --paper: #F5F2EB;        /* 宣紙 */
+  --paper-dim: #F1EDE3;    /* 宣紙微沉（chrome 與狀態列） */
+  --ink-0: #1F1D1A;        /* 焦墨：主文字 */
+  --ink-1: #3D3A33;        /* 濃墨：標題、重點 */
+  --ink-2: #6B675E;        /* 重墨：次要（on 宣紙 5.0:1） */
+  --ink-3: #A8A399;        /* 淡墨：行號等輔助 */
+  --ink-4: #D6D1C4;        /* 清墨：極淡分隔 */
+  --cinnabar: #B3402A;     /* 硃砂：只用於印章與 checkbox 勾 */
+  --font-ui: "LXGW WenKai", "Kaiti TC", serif;
+  --font-mixed: "EB Garamond", "LXGW WenKai", "Kaiti TC", serif;
+  --font-mono: "LXGW WenKai Mono", "Kaiti TC", monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--paper);
+  color: var(--ink-0);
+  font-family: var(--font-ui);
+}
+/* 宣紙紋理：極微噪點蓋整窗 */
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' seed='6'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.13 0 0 0 0 0.12 0 0 0 0 0.10 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 60;
+}
+
+:focus-visible { outline: 2px solid var(--ink-1); outline-offset: 2px; }
+
+.app { height: 100vh; display: flex; flex-direction: column; }
+
+/* ===== 視窗 chrome ===== */
+.chrome {
+  flex: none; height: 46px;
+  display: flex; align-items: center;
+  padding: 0 18px; position: relative;
+  background: var(--paper-dim);
+}
+.dots { display: flex; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-r { background: #DE6A5A; }
+.dot-y { background: #D9A93F; }
+.dot-g { background: #7FA464; }
+.win-title {
+  position: absolute; left: 50%; translate: -50%;
+  font-family: var(--font-mixed);
+  font-size: 13.5px; letter-spacing: .05em; color: var(--ink-2);
+}
+
+/* ===== 工具列 ===== */
+.toolbar {
+  flex: none; display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px 12px;
+  background: var(--paper-dim);
+  box-shadow: 0 12px 26px -18px rgba(31, 29, 26, .35); /* 墨暈代框線 */
+  position: relative; z-index: 2;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border: none; border-radius: 6px;
+  background: transparent; cursor: pointer;
+  font-family: var(--font-ui); font-size: 14px; letter-spacing: .08em;
+  color: var(--ink-2); position: relative;
+  transition: transform .16s ease, color .22s ease;
+}
+.btn::after { /* hover 淡墨暈浮現 */
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 50% 60%, rgba(31,29,26,.09), rgba(31,29,26,.02) 70%, transparent);
+  opacity: 0; transition: opacity .22s ease;
+}
+.btn:hover { color: var(--ink-0); }
+.btn:hover::after { opacity: 1; }
+.btn:active { transform: scale(.98); }
+.btn svg { flex: none; }
+.dropdown { margin-left: auto; color: var(--ink-2); }
+.dropdown .chev { transition: translate .2s ease; }
+.dropdown:hover .chev { translate: 0 1px; }
+
+/* ===== 主區雙欄 ===== */
+.panes { flex: 1; min-height: 0; display: flex; background: var(--paper); }
+
+.pane { flex: 1; min-width: 0; overflow-y: auto; }
+
+/* 墨滲入紙：雙欄入場 */
+@keyframes ink-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: none; }
+}
+.editor  { animation: ink-in .3s ease-out .06s both; }
+.divider { animation: ink-in .3s ease-out .12s both; }
+.preview { animation: ink-in .3s ease-out .18s both; }
+
+/* ===== 編輯區 ===== */
+.editor {
+  padding: 44px 30px 56px 22px;
+  font-family: var(--font-mono);
+  font-size: 14.5px; line-height: 2.1;
+  font-variant-ligatures: none; /* 防連字黏壞表格管線 */
+  box-shadow: 20px 0 38px -28px rgba(31,29,26,.20); /* 右緣墨暈代界 */
+}
+.line {
+  display: grid; grid-template-columns: 2.6em 1fr;
+  column-gap: 1.5em; align-items: baseline;
+  border-radius: 4px;
+}
+.ln {
+  text-align: right; color: var(--ink-3);
+  font-size: .8em; user-select: none;
+}
+.lc { white-space: pre-wrap; word-break: break-word; }
+/* 游標行：一抹極淡墨暈，非實色條 */
+.line.cur {
+  background: radial-gradient(ellipse 58% 170% at 12% 50%, rgba(31,29,26,.07), transparent 72%);
+}
+.caret {
+  display: inline-block; width: 1.5px; height: 1.15em;
+  background: var(--ink-0); vertical-align: -.18em;
+  animation: blink 1.4s steps(2, start) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* 原始碼手工高亮：純墨階靠深淺與字重分層 */
+.md-mark { color: var(--ink-2); }                       /* 結構符號 */
+.md-h    { color: var(--ink-1); font-weight: 700; }     /* 標題文字 */
+.md-b    { color: var(--ink-0); font-weight: 700; }     /* 粗體 */
+.md-i    { color: var(--ink-1); font-style: italic; }   /* 斜體 */
+.md-q    { color: var(--ink-2); font-style: italic; }   /* 引文 */
+.md-task { color: var(--ink-1); font-weight: 700; }     /* 任務核取 */
+.md-lang { color: var(--ink-1); font-weight: 700; }     /* 圍欄語言 */
+.md-code { color: var(--ink-1); }                       /* 程式碼行 */
+.md-num  { color: var(--ink-0); font-weight: 700; }
+.md-link { color: var(--ink-1); text-decoration: underline dotted; text-underline-offset: 3px; }
+.md-url  { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ===== 分隔 handle：墨條 ===== */
+.divider {
+  flex: 0 0 28px; display: flex; align-items: center; justify-content: center;
+  cursor: col-resize;
+}
+.inkstick {
+  width: 6px; height: 64px; border-radius: 3px; position: relative;
+  background: linear-gradient(175deg, #34312B, #1F1D1A 55%, #131110);
+  box-shadow: inset 0 1px 0 rgba(245,242,235,.16);
+  transition: height .25s ease;
+}
+.inkstick::after { /* hover 時底部滲墨 */
+  content: ""; position: absolute; left: 50%; bottom: -11px; translate: -50%;
+  width: 20px; height: 12px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(31,29,26,.30), transparent 70%);
+  filter: blur(1.5px); opacity: 0; transition: opacity .25s ease;
+}
+.divider:hover .inkstick, .divider:focus-visible .inkstick { height: 78px; }
+.divider:hover .inkstick::after, .divider:focus-visible .inkstick::after { opacity: 1; }
+
+/* ===== 預覽區 ===== */
+.preview {
+  padding: 52px 58px 64px;
+  font-family: var(--font-mixed);
+  font-size: 16.5px; color: var(--ink-0);
+  box-shadow: -20px 0 38px -28px rgba(31,29,26,.15); /* 左緣墨暈代界 */
+}
+.doc { max-width: 36em; }
+.doc h1 {
+  font-size: 2.05rem; font-weight: 700; letter-spacing: .06em;
+  color: var(--ink-1); margin: 0;
+}
+.brush { display: block; width: 9.5em; height: 9px; margin: 10px 0 0; }
+.doc h2 {
+  font-size: 1.3rem; font-weight: 700; letter-spacing: .1em;
+  color: var(--ink-1); margin: 2.7em 0 1.1em;
+}
+.doc p { line-height: 2.05; margin: 1.7em 0; }
+.doc strong { font-weight: 700; }
+.doc em { font-style: italic; }
+/* 引用：縮進 + 微縮 + 前置全形引號，不用框線 */
+.doc blockquote {
+  margin: 2.2em 0 2.2em 2.8em; position: relative;
+  font-size: .93em; color: var(--ink-1);
+}
+.doc blockquote::before {
+  content: "『"; position: absolute; left: -1.45em; top: -.42em;
+  font-size: 2.3em; line-height: 1; color: var(--ink-3);
+}
+.doc blockquote p { margin: 0; line-height: 2; }
+.tasks { list-style: none; margin: 1.4em 0; }
+.tasks li { line-height: 2.05; margin: .4em 0; display: flex; align-items: baseline; gap: .65em; }
+.box {
+  flex: none; width: .95em; height: .95em; translate: 0 .12em;
+  border: 1.5px solid var(--ink-2); border-radius: 3px; position: relative;
+}
+.tasks .done .box { border-color: var(--ink-3); }
+.box svg { position: absolute; inset: -3px 0 0 -1px; overflow: visible; }
+/* 表格：只有橫向細清墨線，帳簿感 */
+.doc table { width: 100%; border-collapse: collapse; margin: 1.9em 0; font-size: .95em; }
+.doc th {
+  text-align: left; font-weight: 700; color: var(--ink-1);
+  padding: .55em .3em; border-bottom: 1px solid var(--ink-3);
+}
+.doc td { padding: .6em .3em; border-bottom: 1px solid var(--ink-4); }
+/* 程式碼塊：UA 會強制 monospace 縮字級，必須明確指定 */
+.doc pre {
+  font-family: var(--font-mono); font-size: .86rem; line-height: 1.95;
+  background: rgba(214, 209, 196, .32); border-radius: 6px;
+  padding: 1.3em 1.6em; margin: 1.9em 0; overflow-x: auto;
+  box-shadow: inset 0 0 26px rgba(31,29,26,.03);
+}
+.doc pre code {
+  font-family: inherit; font-size: inherit;
+  font-variant-ligatures: none; color: var(--ink-2);
+}
+.t-obj { color: var(--ink-0); }
+.t-fn  { color: var(--ink-1); font-weight: 600; }
+.t-num { color: var(--ink-0); font-weight: 700; }
+.t-arg { color: var(--ink-2); font-style: italic; }
+.doc a {
+  color: var(--ink-1); text-decoration: none;
+  border-bottom: 1px solid var(--ink-3); padding-bottom: 1px;
+  transition: color .2s ease, border-color .2s ease, background .2s ease;
+}
+.doc a:hover { color: var(--ink-0); border-color: var(--ink-0); background: rgba(31,29,26,.045); }
+
+/* ===== 狀態列 ===== */
+.statusbar {
+  flex: none; display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; padding: 7px 20px;
+  background: var(--paper-dim);
+  box-shadow: 0 -12px 26px -18px rgba(31,29,26,.30);
+  position: relative; z-index: 2;
+  font-family: var(--font-mixed); font-size: 13px;
+  letter-spacing: .06em; color: var(--ink-2);
+}
+.stat-right { text-align: right; }
+
+/* Differentiator：dirty 狀態 = 硃砂印 */
+.seal-wrap { position: relative; display: flex; cursor: pointer; }
+.seal {
+  transition: transform .25s cubic-bezier(.34, 1.45, .64, 1);
+  transform-origin: 50% 55%;
+}
+.seal text { font-family: var(--font-ui); font-weight: 700; }
+.seal-wrap:hover .seal { transform: translateY(-1.5px); }
+/* 儲存鈕 hover：印章輕輕蓋下 */
+.app:has(.btn-save:hover) .seal,
+.app:has(.btn-save:focus-visible) .seal {
+  transform: translateY(1px) scale(.88) rotate(-5deg);
+}
+.seal-wrap::after {
+  content: "未儲存——儲存即落印";
+  position: absolute; bottom: calc(100% + 12px); left: 50%;
+  translate: -50% 4px; white-space: nowrap;
+  background: var(--ink-0); color: var(--paper);
+  font-size: 12.5px; letter-spacing: .1em;
+  padding: 6px 13px; border-radius: 4px;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .2s ease, translate .2s ease, visibility .2s;
+}
+.seal-wrap:hover::after, .seal-wrap:focus-visible::after {
+  opacity: 1; visibility: visible; translate: -50% 0;
+}
+
+/* ===== 響應式：摺上下 ===== */
+@media (max-width: 900px) {
+  .panes { flex-direction: column; }
+  .editor, .preview { box-shadow: none; }
+  .divider { flex: 0 0 26px; cursor: row-resize; }
+  .inkstick { width: 64px; height: 6px; }
+  .divider:hover .inkstick, .divider:focus-visible .inkstick { width: 78px; height: 6px; }
+  .preview { padding: 40px 32px 56px; }
+  .editor { padding: 36px 24px 44px 14px; }
+}
+
+/* ===== 全關動效 ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="chrome">
+    <div class="dots" aria-hidden="true">
+      <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+    </div>
+    <p class="win-title">Plume — 羽毛與墨水.md</p>
+  </header>
+
+  <nav class="toolbar" aria-label="工具列">
+    <button class="btn" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M15 3v4h4"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>
+      新增
+    </button>
+    <button class="btn" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 1.4-2.9A2 2 0 0 1 9.2 10H20a2 2 0 0 1 1.9 2.5l-1.5 6a2 2 0 0 1-2 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.7.9l.8 1.2a2 2 0 0 0 1.7.9H18a2 2 0 0 1 2 2v2"/></svg>
+      開啟
+    </button>
+    <button class="btn btn-save" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.2 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.8a2 2 0 0 0-.6-1.4l-3.8-3.8a2 2 0 0 0-1.4-.6z"/><path d="M7 3v5h8V3"/><path d="M7 21v-7h10v7"/></svg>
+      儲存
+    </button>
+    <button class="btn" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+      匯出
+    </button>
+    <button class="btn dropdown" type="button" aria-haspopup="listbox" aria-expanded="false">
+      最近檔案
+      <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </nav>
+
+  <main class="panes">
+
+    <section class="pane editor" aria-label="編輯區">
+      <div class="line"><span class="ln">1</span><span class="lc"><span class="md-mark"># </span><span class="md-h">羽毛與墨水</span></span></div>
+      <div class="line"><span class="ln">2</span><span class="lc"></span></div>
+      <div class="line"><span class="ln">3</span><span class="lc">寫作不該等待工具。<span class="md-mark">**</span><span class="md-b">Plume</span><span class="md-mark">**</span> 在 <span class="md-mark">*</span><span class="md-i">50 毫秒</span><span class="md-mark">*</span> 內把文字變成排版。</span></div>
+      <div class="line"><span class="ln">4</span><span class="lc"></span></div>
+      <div class="line"><span class="ln">5</span><span class="lc"><span class="md-mark">&gt; </span><span class="md-q">輕的東西,才能飛。</span></span></div>
+      <div class="line"><span class="ln">6</span><span class="lc"></span></div>
+      <div class="line"><span class="ln">7</span><span class="lc"><span class="md-mark">## </span><span class="md-h">今日待辦</span></span></div>
+      <div class="line"><span class="ln">8</span><span class="lc"></span></div>
+      <div class="line"><span class="ln">9</span><span class="lc"><span class="md-mark">- </span><span class="md-task">[x]</span> 把草稿移進 Plume</span></div>
+      <div class="line"><span class="ln">10</span><span class="lc"><span class="md-mark">- </span><span class="md-task">[ ]</span> 匯出 HTML 給編輯</span></div>
+      <div class="line"><span class="ln">11</span><span class="lc"><span class="md-mark">- </span><span class="md-task">[ ]</span> 讀完《夜間飛行》</span></div>
+      <div class="line cur"><span class="ln">12</span><span class="lc"><span class="caret"></span></span></div>
+      <div class="line"><span class="ln">13</span><span class="lc"><span class="md-mark">## </span><span class="md-h">渲染管線</span></span></div>
+      <div class="line"><span class="ln">14</span><span class="lc"></span></div>
+      <div class="line"><span class="ln">15</span><span class="lc"><span class="md-mark">|</span> 階段 <span class="md-mark">|</span> 模組 <span class="md-mark">|</span> 耗時 <span class="md-mark">|</span></span></div>
+      <div class="line"><span class="ln">16</span><span class="lc"><span class="md-mark">|------|------|------|</span></span></div>
+      <div class="line"><span class="ln">17</span><span class="lc"><span class="md-mark">|</span> 解析 <span class="md-mark">|</span> markdown-it <span class="md-mark">|</span> ~3ms <span class="md-mark">|</span></span></div>
+      <div class="line"><span class="ln">18</span><span class="lc"><span class="md-mark">|</span> 消毒 <span class="md-mark">|</span> DOMPurify <span class="md-mark">|</span> ~1ms <span class="md-mark">|</span></span></div>
+      <div class="line"><span class="ln">19</span><span class="lc"></span></div>
+      <div class="line"><span class="ln">20</span><span class="lc"><span class="md-mark">```</span><span class="md-lang">ts</span></span></div>
+      <div class="line"><span class="ln">21</span><span class="lc"><span class="md-code">editor.onChange(debounce(<span class="md-num">50</span>, (doc) =&gt; {</span></span></div>
+      <div class="line"><span class="ln">22</span><span class="lc"><span class="md-code">  preview.render(sanitize(md.render(doc)));</span></span></div>
+      <div class="line"><span class="ln">23</span><span class="lc"><span class="md-code">}));</span></span></div>
+      <div class="line"><span class="ln">24</span><span class="lc"><span class="md-mark">```</span></span></div>
+      <div class="line"><span class="ln">25</span><span class="lc"></span></div>
+      <div class="line"><span class="ln">26</span><span class="lc">羽毛筆時代,書寫是<span class="md-mark">[</span><span class="md-link">一種儀式</span><span class="md-mark">](</span><span class="md-url">https://example.com</span><span class="md-mark">)</span>。</span></div>
+    </section>
+
+    <div class="divider" role="separator" aria-orientation="vertical" tabindex="0" aria-label="調整雙欄寬度">
+      <span class="inkstick"></span>
+    </div>
+
+    <section class="pane preview" aria-label="預覽區">
+      <article class="doc">
+        <h1>羽毛與墨水</h1>
+        <!-- 枯筆橫：粗細不均、尾端飛白 -->
+        <svg class="brush" viewBox="0 0 220 10" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M3 4.6 C 28 3 60 2.3 96 2.9 C 130 3.4 156 3.2 175 3.7 L 189 4.2 C 173 5 149 5.5 121 5.4 C 85 5.9 45 5.7 13 5.2 C 7 5 3.5 4.8 3 4.6 Z" fill="var(--ink-1)"/>
+          <path d="M185 3.8 L 211 4.4 L 187 4.9 Z" fill="var(--ink-1)" opacity=".5"/>
+          <path d="M179 5 L 204 6 L 181 5.8 Z" fill="var(--ink-1)" opacity=".28"/>
+        </svg>
+        <p>寫作不該等待工具。<strong>Plume</strong> 在 <em>50 毫秒</em> 內把文字變成排版。</p>
+        <blockquote><p>輕的東西,才能飛。</p></blockquote>
+        <h2>今日待辦</h2>
+        <ul class="tasks">
+          <li class="done">
+            <span class="box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.6 7.4 L5.8 10.4 L11.8 2.8" fill="none" stroke="var(--cinnabar)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            把草稿移進 Plume
+          </li>
+          <li><span class="box"></span>匯出 HTML 給編輯</li>
+          <li><span class="box"></span>讀完《夜間飛行》</li>
+        </ul>
+        <h2>渲染管線</h2>
+        <table>
+          <thead>
+            <tr><th>階段</th><th>模組</th><th>耗時</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>解析</td><td>markdown-it</td><td>~3ms</td></tr>
+            <tr><td>消毒</td><td>DOMPurify</td><td>~1ms</td></tr>
+          </tbody>
+        </table>
+        <pre><code><span class="t-obj">editor</span>.<span class="t-fn">onChange</span>(<span class="t-fn">debounce</span>(<span class="t-num">50</span>, (<span class="t-arg">doc</span>) =&gt; {
+  <span class="t-obj">preview</span>.<span class="t-fn">render</span>(<span class="t-fn">sanitize</span>(<span class="t-obj">md</span>.<span class="t-fn">render</span>(<span class="t-arg">doc</span>)));
+}));</code></pre>
+        <p>羽毛筆時代,書寫是<a href="https://example.com">一種儀式</a>。</p>
+      </article>
+    </section>
+
+  </main>
+
+  <footer class="statusbar">
+    <span>行 12，欄 34</span>
+    <div class="seal-wrap" tabindex="0" aria-label="未儲存——儲存即落印">
+      <!-- 硃砂印：未存（微噪邊） -->
+      <svg class="seal" width="38" height="38" viewBox="0 0 48 48" role="img" aria-hidden="true">
+        <defs>
+          <filter id="sealNoise" x="-15%" y="-15%" width="130%" height="130%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="11" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="1.9"/>
+          </filter>
+        </defs>
+        <g filter="url(#sealNoise)">
+          <rect x="4.5" y="4.5" width="39" height="39" rx="4" fill="none" stroke="var(--cinnabar)" stroke-width="3"/>
+          <text x="24" y="19.5" text-anchor="middle" dominant-baseline="middle" font-size="15" fill="var(--cinnabar)">未</text>
+          <text x="24" y="35" text-anchor="middle" dominant-baseline="middle" font-size="15" fill="var(--cinnabar)">存</text>
+        </g>
+      </svg>
+    </div>
+    <span class="stat-right">318 字 · 50ms</span>
+  </footer>
+
+</div>
+</body>
+</html>
