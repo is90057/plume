@@ -9,6 +9,20 @@ on:
       - "v*"
 
 jobs:
+  # 供應鏈守門（OWASP 2025 A03）：掃 src-tauri/Cargo.lock 的已知 advisory。
+  # 獨立 job、不塞進三平台 matrix（Rust 依賴跨平台一致，跑一次即可）。
+  # 刻意不被 build 的 needs 依賴：audit 紅燈是可見信號，但不硬擋 draft release 產出。
+  audit:
+    name: Cargo audit (supply chain)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # cargo install 需編譯（約 2-3 分鐘）；release 不頻繁可接受，嫌慢可改用 prebuilt binary。
+      - run: cargo install cargo-audit --locked
+      - run: cargo audit
+        working-directory: src-tauri
+
   build:
     permissions:
       contents: write
