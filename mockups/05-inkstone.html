@@ -6,10 +6,8 @@
 <title>Plume — Inkstone 硯・墨階</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<!-- 霞鶩文楷（含 LXGW WenKai Mono）+ EB Garamond 襯線英數 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap">
+<!-- 字體沿用 04 Markup 三件組：Space Mono（display）+ Martian Mono（編輯區）+ Noto Sans TC（內文） -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Martian+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 /* ===== 墨階五色 + 宣紙 + 硃砂（唯一彩色） ===== */
 :root {
@@ -21,9 +19,9 @@
   --ink-3: #A8A399;        /* 淡墨：行號等輔助 */
   --ink-4: #D6D1C4;        /* 清墨：極淡分隔 */
   --cinnabar: #B3402A;     /* 硃砂：只用於印章與 checkbox 勾 */
-  --font-ui: "LXGW WenKai", "Kaiti TC", serif;
-  --font-mixed: "EB Garamond", "LXGW WenKai", "Kaiti TC", serif;
-  --font-mono: "LXGW WenKai Mono", "Kaiti TC", monospace;
+  --font-ui: "Space Mono", "Noto Sans TC", monospace;
+  --font-mixed: "Noto Sans TC", "PingFang TC", sans-serif;
+  --font-mono: "Martian Mono", "Noto Sans TC", monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
