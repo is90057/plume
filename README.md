@@ -20,6 +20,8 @@
 | **同步捲動** | 編輯區捲動，預覽區按比例跟隨 |
 | **匯出 HTML** | 產出單一自帶樣式的 `.html`，瀏覽器開啟與預覽所見一致 |
 | **最近檔案** | 最近 10 筆跨重啟有效，檔案存取權限一併記住 |
+| **拖曳開檔** | 把 `.md` 拖進視窗就能開——拖曳中有跟著佈景走的邊框提示，有未存內容會先確認 |
+| **檔案關聯** | macOS Finder 右鍵 → 以 Plume 打開，或設為 `.md` 的預設應用程式；app 已開著時再雙擊另一個 `.md` 會在同一視窗載入 |
 | **快捷鍵** | Cmd/Ctrl + N 新檔、O 開檔、S 存檔、Shift+S 另存；未儲存變更關閉視窗會攔下確認 |
 
 ## 系統架構
@@ -35,15 +37,18 @@ flowchart LR
     end
     subgraph Rust["Rust 核心（src-tauri）"]
         Plugins["官方 Plugins<br/>dialog / fs / store<br/>persisted-scope / opener"]
+        Commands["自訂 Commands<br/>grant_scope / get_opened_urls"]
     end
     Editor -- "onChange (debounce 50ms)" --> Renderer
     Renderer --> Preview
     File -- IPC --> Plugins
     Recent -- IPC --> Plugins
     Preview -- "外部連結 IPC" --> Plugins
+    File -- "拖曳/檔案關聯" --> Commands
+    Commands -- "fs scope 授權" --> Plugins
 ```
 
-**設計原則**：Markdown 渲染管線完整留在前端（同步、零 IPC、零 race condition）；Rust 端只負責檔案 I/O、對話框與系統整合——這是 Tauri 相對 Electron 的記憶體優勢來源，也避免把解析搬到 Rust 反而被 IPC 序列化成本吃掉的陷阱。
+**設計原則**：Markdown 渲染管線完整留在前端（同步、零 IPC、零 race condition）；Rust 端負責檔案 I/O、對話框、系統整合，以及兩個自訂 command——`grant_scope`（拖曳與檔案關聯的外部路徑授權，含 symlink 解析與副檔名驗證）和 `get_opened_urls`（OS 傳入的冷啟動檔案路徑）。這是 Tauri 相對 Electron 的記憶體優勢來源，也避免把解析搬到 Rust 反而被 IPC 序列化成本吃掉的陷阱。
 
 ## 技術棧
 
@@ -105,9 +110,10 @@ markdown-tool/
 │   ├── recent.ts           # 最近開啟檔案（plugin-store）
 │   └── style.css           # 版面 + 預覽 typography
 ├── src-tauri/              # Rust 核心
-│   ├── src/lib.rs          # Tauri 啟動 + plugin 註冊
+│   ├── src/lib.rs          # Tauri 啟動 + plugin 註冊 + 自訂 commands
 │   ├── capabilities/       # IPC 權限宣告（最小化原則）
-│   └── tauri.conf.json     # 視窗、CSP、bundle 設定
+│   ├── permissions/        # 自動生成的 command ACL
+│   └── tauri.conf.json     # 視窗、CSP、bundle、檔案關聯設定
 ├── tests/                  # Vitest 測試
 ├── docs/                   # 規格文件
 │   ├── PRD.md              # 需求與使用者故事

@@ -20,6 +20,8 @@ A lightweight Markdown editor — write on the left, watch it render on the righ
 | **Synced scrolling** | Scroll the editor and the preview follows proportionally |
 | **HTML export** | Produces a single self-styled `.html` that renders exactly like the preview |
 | **Recent files** | Last 10 files survive restarts, file-access permissions included |
+| **Drag & drop** | Drop a `.md` onto the window to open it — a themed border lights up while hovering, and unsaved work gets a save-or-discard prompt first |
+| **File association** | Right-click a `.md` in Finder → Open With → Plume, or make Plume the default. Double-clicking another `.md` while Plume is running loads it in the same window |
 | **Shortcuts** | Cmd/Ctrl + N new, O open, S save, Shift+S save-as; closing with unsaved changes prompts first |
 
 ## Architecture
@@ -35,15 +37,18 @@ flowchart LR
     end
     subgraph Rust["Rust core (src-tauri)"]
         Plugins["official plugins<br/>dialog / fs / store<br/>persisted-scope / opener"]
+        Commands["custom commands<br/>grant_scope / get_opened_urls"]
     end
     Editor -- "onChange (debounce 50ms)" --> Renderer
     Renderer --> Preview
     File -- IPC --> Plugins
     Recent -- IPC --> Plugins
     Preview -- "external links via IPC" --> Plugins
+    File -- "drag-drop / file assoc" --> Commands
+    Commands -- "fs scope grant" --> Plugins
 ```
 
-**Design principle:** the entire Markdown pipeline stays in the frontend — synchronous, zero IPC, zero race conditions. Rust handles file I/O, dialogs, and OS integration only. That split is where Tauri's memory advantage over Electron comes from, and it sidesteps the trap of moving parsing into Rust just to hand the gains back in IPC serialization.
+**Design principle:** the entire Markdown pipeline stays in the frontend — synchronous, zero IPC, zero race conditions. Rust handles file I/O, dialogs, OS integration, and two custom commands: `grant_scope` (per-file fs-scope authorization for drag-drop and file-association paths, with symlink resolution and extension validation) and `get_opened_urls` (cold-start file paths from the OS). That split is where Tauri's memory advantage over Electron comes from, and it sidesteps the trap of moving parsing into Rust just to hand the gains back in IPC serialization.
 
 ## Tech stack
 
@@ -105,9 +110,10 @@ markdown-tool/
 │   ├── recent.ts           # recent files (plugin-store)
 │   └── style.css           # layout + preview typography
 ├── src-tauri/              # Rust core
-│   ├── src/lib.rs          # Tauri bootstrap + plugin registration
+│   ├── src/lib.rs          # Tauri bootstrap + plugins + custom commands
 │   ├── capabilities/       # IPC permission declarations (least privilege)
-│   └── tauri.conf.json     # window, CSP, bundle config
+│   ├── permissions/        # auto-generated command ACLs
+│   └── tauri.conf.json     # window, CSP, bundle, file association config
 ├── tests/                  # Vitest tests
 ├── docs/                   # specs (written in Chinese)
 │   ├── PRD.md              # requirements and user stories
