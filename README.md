@@ -9,6 +9,10 @@
 
 輕量 Markdown 編輯器——左邊寫，右邊即時看渲染。Tauri 2 桌面應用，開了就能寫，存了就能走。
 
+<p align="center">
+  <img src="docs/images/screenshot-dark.webp" alt="Plume 夜航主題截圖" width="720" />
+</p>
+
 ## 功能特色
 
 | 功能 | 說明 |
@@ -137,6 +141,18 @@ markdown-tool/
 麻煩在於，Markdown 原始碼讀得懂，渲染後長什麼樣卻肉眼看不出來——表格、任務清單、程式碼區塊都得渲染過才見真章。它不像 Word 點開就是排好的版面，於是每次開啟、每次編輯，都得借別的工具：開一整套 Obsidian vault，丟給瀏覽器外掛，或者 push 上 GitHub 只為看一眼。就「讀一份文件」這件事而言，繞得太遠了。
 
 市面上的工具很多，但我就是想要一個自己的版本：開了就能寫，存了就能走，沒有 vault、沒有帳號、沒有外掛生態。連名字都是特地想過的——Plume，法文裡的羽毛，也是落筆的羽毛筆。輕，而且是拿來寫字的。
+
+---
+
+## 周邊概念設計
+
+夜航主題裡的狐狸跑出了 app，變成了手機殼、滑鼠墊和貼紙。
+
+<p align="center">
+  <img src="docs/images/merch-phone-case.webp" alt="手機殼" width="200" />
+  <img src="docs/images/merch-mousepad.webp" alt="滑鼠墊" width="200" />
+  <img src="docs/images/merch-stickers.webp" alt="貼紙組" width="200" />
+</p>
 
 ---
 

@@ -9,6 +9,10 @@
 
 A lightweight Markdown editor — write on the left, watch it render on the right. Tauri 2 desktop app: opens fast, saves your file, gets out of the way.
 
+<p align="center">
+  <img src="docs/images/screenshot-dark.webp" alt="Plume Vol de Nuit theme screenshot" width="720" />
+</p>
+
 ## Features
 
 | Feature | What it does |
@@ -135,6 +139,18 @@ I read and write far more Markdown than I ever signed up for. That's an AI-era t
 The catch is that a Markdown file never shows you its rendered self. The source is readable, but tables, task lists, and code blocks only take shape once rendered — unlike a Word document, which opens already laid out. So the routine became: spin up an entire Obsidian vault, hand the file to a browser extension, or push it to GitHub just to see how one file looks. A long detour for "let me read this."
 
 There are plenty of Markdown editors around. I simply wanted one of my own: opens instantly, previews as you type, saves and steps aside. No vault, no account, no plugin ecosystem. Even the name was deliberate — plume, the French word for a feather, and for the quill you write with. Light, and made for writing.
+
+---
+
+## Merch Concepts
+
+The fox from the Vol de Nuit theme escaped the app and landed on a phone case, a mousepad, and a sticker sheet.
+
+<p align="center">
+  <img src="docs/images/merch-phone-case.webp" alt="Phone case" width="200" />
+  <img src="docs/images/merch-mousepad.webp" alt="Mousepad" width="200" />
+  <img src="docs/images/merch-stickers.webp" alt="Sticker sheet" width="200" />
+</p>
 
 ---
 
