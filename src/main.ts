@@ -3,7 +3,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { getContent, getLineCount, getScrollDOM, initEditor, onChange } from "./editor";
+import { getContent, getLineCount, getScrollDOM, initEditor, onChange, remeasure } from "./editor";
 import { initPreview, scrollToTopOnNextUpdate, showError, update } from "./preview";
 import { render } from "./renderer";
 import {
@@ -30,7 +30,15 @@ initEditor(editorEl);
 initPreview(previewEl, getScrollDOM());
 initStatusbar();
 onDirtyChange(setDirty); // dirty 指示：03 指針垂落 / 05 硃砂印
-onLoad(scrollToTopOnNextUpdate); // 開檔/新檔：預覽回頂（避免沿用前一檔被捲到底的位置）
+onLoad((kind) => {
+  scrollToTopOnNextUpdate();
+  setMode(kind === "new" ? "edit" : "read");
+});
+
+function setMode(mode: "read" | "edit"): void {
+  document.body.dataset.mode = mode;
+  if (mode === "edit") remeasure();
+}
 void initTheme(); // index.html 已帶預設主題，這裡載入使用者上次選擇
 
 let debounceTimer: number | undefined;
@@ -93,6 +101,9 @@ document.querySelector("#btn-open")!.addEventListener("click", doOpen);
 document.querySelector("#btn-save")!.addEventListener("click", doSave);
 document.querySelector("#btn-export")!.addEventListener("click", () => void exportHtml());
 document.querySelector("#btn-theme")!.addEventListener("click", () => void toggleTheme());
+document.querySelector("#btn-mode")!.addEventListener("click", () => {
+  setMode(document.body.dataset.mode === "read" ? "edit" : "read");
+});
 
 // ----- 快捷鍵 Cmd(mac)/Ctrl(win) + N / O / S / Shift+S -----
 
@@ -111,6 +122,10 @@ window.addEventListener("keydown", (e) => {
       e.preventDefault();
       if (e.shiftKey) doSaveAs();
       else doSave();
+      break;
+    case "e":
+      e.preventDefault();
+      setMode(document.body.dataset.mode === "read" ? "edit" : "read");
       break;
   }
 });
@@ -146,6 +161,8 @@ void invoke<string[]>("get_opened_urls").then((urls) => {
   if (urls.length) {
     const md = urls.find((p) => MD_EXT.test(p));
     if (md) openExternalWithRefresh(md);
+  } else {
+    setMode("edit");
   }
 });
 

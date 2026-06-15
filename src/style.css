@@ -915,6 +915,35 @@ html[data-theme="vol-de-nuit"] #illos img {
   animation: pane-in 0.3s ease-out 0.1s backwards;
 }
 
+/* ===== 閱讀/編輯模式 ===== */
+
+body[data-mode="read"] .edit-only {
+  display: none;
+}
+
+body[data-mode="read"] #editor {
+  display: none;
+}
+
+body[data-mode="read"] #preview {
+  flex: 1 1 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+body[data-mode="read"] .illo-fox {
+  display: none !important;
+}
+
+/* 模式切換鈕：文字由 data-mode 決定 */
+body[data-mode="read"] #btn-mode .mode-name::before {
+  content: "編輯";
+}
+
+body[data-mode="edit"] #btn-mode .mode-name::before {
+  content: "閱讀";
+}
+
 /* ===== 拖曳回饋 ===== */
 
 body.drag-hover::after {
