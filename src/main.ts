@@ -47,7 +47,7 @@ function setMode(mode: "read" | "edit"): void {
 }
 
 function toggleMode(): void {
-  toggleMode();
+  setMode(document.body.dataset.mode === "read" ? "edit" : "read");
 }
 void initTheme(); // index.html 已帶預設主題，這裡載入使用者上次選擇
 
