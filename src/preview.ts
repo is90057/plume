@@ -23,7 +23,7 @@ async function renderMermaid(gen: number): Promise<void> {
   const mermaid = await getMermaid();
   if (gen !== mermaidGen) return;
 
-  const theme = currentTheme() === "inkstone" ? "dark" : "default";
+  const theme = currentTheme() === "vol-de-nuit" ? "dark" : "default";
   if (theme !== lastMermaidTheme) {
     mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme });
     lastMermaidTheme = theme;
