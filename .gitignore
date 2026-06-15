@@ -21,3 +21,4 @@ src-tauri/gen/schemas/
 
 # macOS
 .DS_Store
+.claude/RESUME.md
