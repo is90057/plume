@@ -24,6 +24,7 @@ html[data-theme="vol-de-nuit"] {
 
 html[data-theme="inkstone"] {
   --bg: #f5f2eb; /* 宣紙 */
+  --bg-bar: #f1ede3; /* toolbar/statusbar/TOC 微暖底 */
   --bg-panel: #f5f2eb;
   --bg-inset: rgba(214, 209, 196, 0.32);
   --fg: #1f1d1a; /* 焦墨 */
@@ -102,7 +103,7 @@ html[data-theme="inkstone"] body::after {
 
 /* 05：墨暈代框線 */
 html[data-theme="inkstone"] #toolbar {
-  background: #f1ede3;
+  background: var(--bg-bar);
   border-bottom: none;
   box-shadow: 0 12px 26px -18px rgba(31, 29, 26, 0.35);
   position: relative;
@@ -694,7 +695,7 @@ html[data-theme="inkstone"] #preview .task-list-item-checkbox {
 }
 
 html[data-theme="inkstone"] #statusbar {
-  background: #f1ede3;
+  background: var(--bg-bar);
   border-top: none;
   box-shadow: 0 -12px 26px -18px rgba(31, 29, 26, 0.3);
   position: relative;
@@ -913,6 +914,134 @@ html[data-theme="vol-de-nuit"] #illos img {
 
 #preview {
   animation: pane-in 0.3s ease-out 0.1s backwards;
+}
+
+/* ===== 閱讀/編輯模式 ===== */
+
+body[data-mode="read"] .edit-only {
+  display: none;
+}
+
+body[data-mode="edit"] .read-only {
+  display: none;
+}
+
+body[data-mode="read"] #editor {
+  display: none;
+}
+
+body[data-mode="read"] #preview {
+  flex: 1 1 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+body[data-mode="read"] .illo-fox {
+  right: 28px;
+  transform: scaleX(-1);
+}
+
+/* 模式切換鈕：文字由 data-mode 決定 */
+body[data-mode="read"] #btn-mode .mode-name::before {
+  content: "編輯";
+}
+
+body[data-mode="edit"] #btn-mode .mode-name::before {
+  content: "閱讀";
+}
+
+/* ===== 全螢幕閱讀 ===== */
+
+body[data-fullscreen="on"] #toolbar,
+body[data-fullscreen="on"] #statusbar {
+  display: none;
+}
+
+#btn-exit-fullscreen {
+  display: none;
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg-panel);
+  color: var(--fg-muted);
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+#btn-exit-fullscreen:hover {
+  opacity: 1;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+body[data-fullscreen="on"] #btn-exit-fullscreen {
+  display: block;
+}
+
+/* ===== TOC 目錄導覽 ===== */
+
+#toc {
+  display: none;
+  width: 220px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  padding: 16px 12px;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 12.5px;
+}
+
+body[data-toc="open"][data-mode="read"] #toc {
+  display: block;
+}
+
+#toc ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#toc li {
+  padding: 5px 8px;
+  cursor: pointer;
+  color: var(--fg-muted);
+  line-height: 1.5;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#toc li:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+#toc li[data-level="1"] {
+  font-weight: 600;
+  color: var(--fg-strong);
+}
+
+#toc li[data-level="2"] { padding-left: 16px; }
+#toc li[data-level="3"] { padding-left: 28px; }
+#toc li[data-level="4"] { padding-left: 40px; }
+#toc li[data-level="5"] { padding-left: 52px; }
+#toc li[data-level="6"] { padding-left: 64px; }
+
+html[data-theme="vol-de-nuit"] #toc li:hover {
+  box-shadow: 0 0 8px rgba(232, 184, 75, 0.12);
+}
+
+html[data-theme="inkstone"] #toc {
+  background: var(--bg-bar);
 }
 
 /* ===== 拖曳回饋 ===== */

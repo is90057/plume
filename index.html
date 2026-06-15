@@ -16,22 +16,28 @@
     <script type="module" src="/src/main.ts" defer></script>
   </head>
 
-  <body>
+  <body data-mode="read">
     <header id="toolbar">
-      <button id="btn-new" type="button">新增</button>
+      <button id="btn-new" type="button" class="edit-only">新增</button>
       <button id="btn-open" type="button">開啟</button>
-      <button id="btn-save" type="button">儲存</button>
+      <button id="btn-save" type="button" class="edit-only">儲存</button>
       <button id="btn-export" type="button">匯出</button>
       <button id="btn-theme" type="button" aria-label="切換佈景主題">
-        <!-- 文字由 CSS 依 data-theme 切換：夜航 / 硯墨 -->
         <span class="theme-name" aria-hidden="true"></span>
+      </button>
+      <button id="btn-toc" type="button" class="read-only">目錄</button>
+      <button id="btn-fullscreen" type="button" class="read-only">全螢幕</button>
+      <button id="btn-mode" type="button" aria-label="切換閱讀/編輯模式">
+        <span class="mode-name" aria-hidden="true"></span>
       </button>
       <select id="recent-list" aria-label="最近檔案">
         <option value="" selected disabled>最近檔案</option>
       </select>
     </header>
 
+    <button id="btn-exit-fullscreen" type="button" aria-label="退出全螢幕">✕</button>
     <main>
+      <aside id="toc"><ul></ul></aside>
       <div id="editor"></div>
       <div id="preview"></div>
       <!-- 夜航主題浮飾：郵務機（預覽右上）+ 守夜狐（編輯區右下）。

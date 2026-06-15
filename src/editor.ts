@@ -51,6 +51,10 @@ export function setContent(text: string): void {
   });
 }
 
+export function remeasure(): void {
+  view!.requestMeasure();
+}
+
 export function onChange(cb: () => void): void {
   changeListeners.push(cb);
 }

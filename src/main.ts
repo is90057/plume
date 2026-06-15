@@ -3,7 +3,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { getContent, getLineCount, getScrollDOM, initEditor, onChange } from "./editor";
+import { getContent, getLineCount, getScrollDOM, initEditor, onChange, remeasure } from "./editor";
 import { initPreview, scrollToTopOnNextUpdate, showError, update } from "./preview";
 import { render } from "./renderer";
 import {
@@ -22,15 +22,33 @@ import {
 import { getRecent } from "./recent";
 import { initTheme, toggleTheme } from "./theme";
 import { initStatusbar, setDirty, updateStats } from "./statusbar";
+import { initToc, updateToc } from "./toc";
 
 const editorEl = document.querySelector<HTMLElement>("#editor")!;
 const previewEl = document.querySelector<HTMLElement>("#preview")!;
 
 initEditor(editorEl);
 initPreview(previewEl, getScrollDOM());
+initToc(document.querySelector<HTMLElement>("#toc")!, previewEl);
 initStatusbar();
 onDirtyChange(setDirty); // dirty 指示：03 指針垂落 / 05 硃砂印
-onLoad(scrollToTopOnNextUpdate); // 開檔/新檔：預覽回頂（避免沿用前一檔被捲到底的位置）
+onLoad((kind) => {
+  scrollToTopOnNextUpdate();
+  setMode(kind === "new" ? "edit" : "read");
+});
+
+function setMode(mode: "read" | "edit"): void {
+  document.body.dataset.mode = mode;
+  if (mode === "edit") {
+    delete document.body.dataset.toc;
+    delete document.body.dataset.fullscreen;
+    remeasure();
+  }
+}
+
+function toggleMode(): void {
+  setMode(document.body.dataset.mode === "read" ? "edit" : "read");
+}
 void initTheme(); // index.html 已帶預設主題，這裡載入使用者上次選擇
 
 let debounceTimer: number | undefined;
@@ -42,6 +60,7 @@ onChange(() => {
       const content = getContent();
       const t0 = performance.now();
       update(render(content));
+      updateToc();
       updateStats({
         chars: content.replace(/\s/g, "").length, // 寫作直覺的「字數」：不含空白換行
         lines: getLineCount(),
@@ -93,10 +112,26 @@ document.querySelector("#btn-open")!.addEventListener("click", doOpen);
 document.querySelector("#btn-save")!.addEventListener("click", doSave);
 document.querySelector("#btn-export")!.addEventListener("click", () => void exportHtml());
 document.querySelector("#btn-theme")!.addEventListener("click", () => void toggleTheme());
+document.querySelector("#btn-toc")!.addEventListener("click", () => {
+  document.body.dataset.toc = document.body.dataset.toc === "open" ? "closed" : "open";
+});
+document.querySelector("#btn-fullscreen")!.addEventListener("click", () => {
+  document.body.dataset.fullscreen = "on";
+});
+document.querySelector("#btn-exit-fullscreen")!.addEventListener("click", () => {
+  delete document.body.dataset.fullscreen;
+});
+document.querySelector("#btn-mode")!.addEventListener("click", () => {
+  toggleMode();
+});
 
 // ----- 快捷鍵 Cmd(mac)/Ctrl(win) + N / O / S / Shift+S -----
 
 window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.body.dataset.fullscreen === "on") {
+    delete document.body.dataset.fullscreen;
+    return;
+  }
   if (!e.metaKey && !e.ctrlKey) return;
   switch (e.key.toLowerCase()) {
     case "n":
@@ -111,6 +146,10 @@ window.addEventListener("keydown", (e) => {
       e.preventDefault();
       if (e.shiftKey) doSaveAs();
       else doSave();
+      break;
+    case "e":
+      e.preventDefault();
+      toggleMode();
       break;
   }
 });
@@ -130,8 +169,10 @@ void getCurrentWebview().onDragDropEvent((event) => {
   const { type } = event.payload;
   if (type === "drop") {
     document.body.classList.remove("drag-hover");
-    const md = event.payload.paths.find((p) => MD_EXT.test(p));
+    const paths = event.payload.paths;
+    const md = paths.find((p) => MD_EXT.test(p));
     if (md) openExternalWithRefresh(md);
+    else if (paths.length > 0) openExternalWithRefresh(paths[0]);
   } else if (type === "enter" || type === "over") {
     document.body.classList.add("drag-hover");
   } else {
@@ -146,6 +187,8 @@ void invoke<string[]>("get_opened_urls").then((urls) => {
   if (urls.length) {
     const md = urls.find((p) => MD_EXT.test(p));
     if (md) openExternalWithRefresh(md);
+  } else {
+    setMode("edit");
   }
 });
 
