@@ -1,5 +1,4 @@
 // 預覽 DOM 更新 + 同步捲動（編輯→預覽單向比例式）+ 外部連結攔截（SPEC「模組職責」、Task 5）。
-import DOMPurify from "dompurify";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { currentTheme } from "./theme";
 
@@ -37,14 +36,12 @@ async function renderMermaid(gen: number): Promise<void> {
     return;
   }
 
-  // mermaid 內部 DOMPurify 允許 foreignObject（SVG XSS escape hatch），
-  // 且 bindFunctions 會附加 click handler 繞過外部連結攔截。
-  // 重新過一次我們自己的 DOMPurify：剝 foreignObject + 剝事件綁定（innerHTML 重建 DOM）。
+  // 剝除 mermaid bindFunctions 附加的 click handler（會繞過外部連結攔截）。
+  // cloneNode(true) deep-clone DOM 但不複製 addEventListener 綁定；
+  // 安全靠 mermaid securityLevel:'strict'（內部 DOMPurify + HTML encode）+ pre-render DOMPurify。
   for (const el of container!.querySelectorAll<HTMLElement>("pre.mermaid")) {
-    el.innerHTML = DOMPurify.sanitize(el.innerHTML, {
-      USE_PROFILES: { svg: true, svgFilters: true },
-      FORBID_TAGS: ["foreignobject"],
-    });
+    const clean = el.cloneNode(true) as HTMLElement;
+    el.replaceChildren(...clean.childNodes);
   }
 }
 
