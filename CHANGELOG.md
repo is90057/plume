@@ -6,6 +6,28 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-16
+
+### 新增
+
+- 專注模式（Cmd+Shift+F）：開啟後只有游標所在段落完全可見，其餘段落淡出——幫你集中注意力在當前段落。段落邊界由空行決定，移動游標時即時跟隨
+- 打字機模式（Cmd+T）：游標行永遠固定在畫面垂直中央，打字時文字向上捲動。文件頂部也能置中（50vh 上方留白 + scrollPastEnd 底部留白）
+- 複製 HTML（Cmd+Shift+C）：把編輯器的 Markdown 渲染成 HTML 並複製到剪貼簿，可直接貼進 CMS 或部落格的 HTML 編輯器。含數學公式的文件會自動轉為 MathML
+- Front matter 隱藏：YAML front matter 區塊（`---` 包圍）不會出現在預覽中
+- 腳註：支援 `[^1]` 語法的腳註，預覽底部自動產生腳註區塊，點擊引用可跳轉
+- 數學公式：行內 `$...$` 與獨立 `$$...$$` 數學公式渲染，KaTeX 懶載入——沒有數學的檔案不會載入 KaTeX
+
+### 安全
+
+- KaTeX 匯出路徑補上 DOMPurify 二次消毒：`renderMathForExport` 的 MathML 輸出現在與預覽路徑一致，都經過 DOMPurify 收尾
+- KaTeX 設定 `trust: false` + `maxSize: 20`，防止惡意 LaTeX 巨集
+
+### 效能
+
+- Release profile 啟用 LTO + strip + codegen-units 1 + panic abort，binary 從 ~11 MB 降至 ~4.9 MB（-55%）
+
+## [0.5.0] - 2026-06-15
+
 ### 新增
 
 - Mermaid 圖表閱讀：在 Markdown 中用 ` ```mermaid ` 區塊嵌入 flowchart、sequence、class、ER、Gantt 等圖表，預覽區即時渲染為 SVG。不需編輯 mermaid——只是讓別人寫的圖表看得到

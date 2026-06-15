@@ -6,6 +6,28 @@ This file tracks notable changes to Plume. Format inspired by [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-16
+
+### Added
+
+- Focus mode (Cmd+Shift+F): only the paragraph under the cursor is fully visible — the rest fades to 25% opacity. Paragraph boundaries follow blank lines and track the cursor in real time
+- Typewriter mode (Cmd+T): the cursor line stays vertically centered at all times — text scrolls up as you type. Works even at the top of the document (50vh top padding + scrollPastEnd bottom padding)
+- Copy as HTML (Cmd+Shift+C): renders the editor's Markdown to HTML and copies it to the clipboard, ready to paste into a CMS or blog editor. Documents with math are automatically converted to MathML
+- Front matter hiding: YAML front matter blocks (wrapped in `---`) are stripped from the preview
+- Footnotes: `[^1]` footnote syntax renders with a footnote section at the bottom of the preview — click a reference to jump to it
+- Math rendering: inline `$...$` and display `$$...$$` math via KaTeX, lazy-loaded — files without math never load KaTeX
+
+### Security
+
+- KaTeX export path now has DOMPurify sanitization: `renderMathForExport` MathML output is sanitized the same way as the preview path
+- KaTeX configured with `trust: false` + `maxSize: 20` to prevent malicious LaTeX macros
+
+### Performance
+
+- Release profile enables LTO + strip + codegen-units 1 + panic abort, shrinking the binary from ~11 MB to ~4.9 MB (−55%)
+
+## [0.5.0] - 2026-06-15
+
 ### Added
 
 - Mermaid diagram rendering: embed diagrams via ` ```mermaid ` fenced blocks — flowchart, sequence, class, ER, Gantt and more render as SVG in the preview pane. Read-only support: makes other people's diagrams visible without needing to edit them
