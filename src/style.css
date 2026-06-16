@@ -159,13 +159,21 @@ html[data-theme="inkstone"] #toolbar button:hover {
   transform: scale(0.98);
 }
 
-/* 主題切換鈕：顯示當前主題名，文字由 data-theme 決定 */
+/* 主題切換鈕：顯示當前主題名 / auto */
 html[data-theme="vol-de-nuit"] #btn-theme .theme-name::before {
   content: "夜航";
 }
 
 html[data-theme="inkstone"] #btn-theme .theme-name::before {
   content: "硯墨";
+}
+
+html[data-theme-choice="auto"][data-theme="vol-de-nuit"] #btn-theme .theme-name::before {
+  content: "AUTO";
+}
+
+html[data-theme-choice="auto"][data-theme="inkstone"] #btn-theme .theme-name::before {
+  content: "自動";
 }
 
 #recent-list {
@@ -354,8 +362,8 @@ html[data-theme="inkstone"] #editor .tok-monospace {
 
 #preview {
   padding: 28px 34px 44px;
-  font-family: var(--font-preview);
-  font-size: 15.5px;
+  font-family: var(--reading-font, var(--font-preview));
+  font-size: var(--reading-size, 15.5px);
   line-height: 1.85;
   word-wrap: break-word;
 }

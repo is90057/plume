@@ -23,10 +23,11 @@ import {
   saveFile,
 } from "./file";
 import { getRecent } from "./recent";
-import { initTheme, toggleTheme } from "./theme";
+import { currentChoice, initTheme, onThemeChange, setTheme, toggleTheme } from "./theme";
+import { currentFont, decreaseSize, increaseSize, initReadingPrefs, resetSize, setFont } from "./reading-prefs";
 import { initStatusbar, setDirty, updateStats } from "./statusbar";
 import { initToc, updateToc } from "./toc";
-import { initMenu } from "./menu";
+import { initMenu, updateThemeMenu } from "./menu";
 import { toggleShortcuts, hideShortcuts } from "./shortcuts";
 
 const editorEl = document.querySelector<HTMLElement>("#editor")!;
@@ -58,7 +59,35 @@ function toggleMode(): void {
 function toggleToc(): void {
   document.body.dataset.toc = document.body.dataset.toc === "open" ? "closed" : "open";
 }
-void initTheme(); // index.html 已帶預設主題，這裡載入使用者上次選擇
+onThemeChange(() => update(render(getContent())));
+void Promise.all([initTheme(), initReadingPrefs()]).then(() => {
+  void initMenu({
+    onNew: doNew,
+    onOpen: doOpen,
+    onSave: doSave,
+    onSaveAs: doSaveAs,
+    onExport: () => void exportHtml(),
+    onToggleMode: toggleMode,
+    onToggleFocus: (checked) => {
+      reconfigureFocus(checked ? focusExtension() : []);
+    },
+    onToggleTypewriter: (checked) => {
+      reconfigureTypewriter(checked ? typewriterExtension() : []);
+    },
+    onToggleToc: toggleToc,
+    onFullscreen: () => { document.body.dataset.fullscreen = "on"; },
+    onCopyHtml: () => void copyHtml(),
+    onShortcuts: toggleShortcuts,
+    onSetTheme: (choice) => { void setTheme(choice).then(() => update(render(getContent()))); },
+    onSetFont: (family) => { void setFont(family); },
+    onFontIncrease: () => { void increaseSize(); },
+    onFontDecrease: () => { void decreaseSize(); },
+    onFontReset: () => { void resetSize(); },
+  }, {
+    themeChoice: currentChoice(),
+    fontFamily: currentFont(),
+  });
+});
 
 let debounceTimer: number | undefined;
 onChange(() => {
@@ -121,7 +150,10 @@ document.querySelector("#btn-open")!.addEventListener("click", doOpen);
 document.querySelector("#btn-save")!.addEventListener("click", doSave);
 document.querySelector("#btn-export")!.addEventListener("click", () => void exportHtml());
 document.querySelector("#btn-theme")!.addEventListener("click", () => {
-  void toggleTheme().then(() => update(render(getContent())));
+  void toggleTheme().then((choice) => {
+    update(render(getContent()));
+    updateThemeMenu(choice);
+  });
 });
 document.querySelector("#btn-toc")!.addEventListener("click", toggleToc);
 document.querySelector("#btn-fullscreen")!.addEventListener("click", () => {
@@ -132,29 +164,6 @@ document.querySelector("#btn-exit-fullscreen")!.addEventListener("click", () => 
 });
 document.querySelector("#btn-mode")!.addEventListener("click", () => {
   toggleMode();
-});
-
-// ----- 原生選單列 -----
-
-void initMenu({
-  onNew: doNew,
-  onOpen: doOpen,
-  onSave: doSave,
-  onSaveAs: doSaveAs,
-  onExport: () => void exportHtml(),
-  onToggleMode: toggleMode,
-  onToggleFocus: (checked) => {
-    reconfigureFocus(checked ? focusExtension() : []);
-  },
-  onToggleTypewriter: (checked) => {
-    reconfigureTypewriter(checked ? typewriterExtension() : []);
-  },
-  onToggleToc: toggleToc,
-  onFullscreen: () => {
-    document.body.dataset.fullscreen = "on";
-  },
-  onCopyHtml: () => void copyHtml(),
-  onShortcuts: toggleShortcuts,
 });
 
 // ----- Escape（選單 accelerator 不處理的按鍵） -----

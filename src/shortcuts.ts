@@ -14,6 +14,11 @@ const GROUPS = [
     [`${MOD}${SHIFT}F`, "Focus Mode"],
     [`${MOD}T`, "Typewriter Mode"],
   ]},
+  { title: "字型", items: [
+    [`${MOD}=`, "放大字型"],
+    [`${MOD}-`, "縮小字型"],
+    [`${MOD}0`, "重設字型大小"],
+  ]},
   { title: "工具", items: [
     [`${MOD}${SHIFT}C`, "複製為 HTML"],
     ["Esc", "退出全螢幕"],
