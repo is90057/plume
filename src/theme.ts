@@ -1,52 +1,84 @@
-// 佈景主題：vol-de-nuit（夜航儀表・深）/ inkstone（硯墨五階・淺）。
-// 切換 = html[data-theme]，樣式全在 style.css 變數組；plugin-store 持久化 settings.json。
 import { load, type Store } from "@tauri-apps/plugin-store";
 
 export type ThemeName = "vol-de-nuit" | "inkstone";
+export type ThemeChoice = ThemeName | "auto";
 
 const STORE_FILE = "settings.json";
 const KEY = "theme";
-const DEFAULT_THEME: ThemeName = "vol-de-nuit";
+const DEFAULT_CHOICE: ThemeChoice = "vol-de-nuit";
 
 let storePromise: Promise<Store> | null = null;
+let choice: ThemeChoice = DEFAULT_CHOICE;
+let changeCallback: (() => void) | null = null;
+let mq: MediaQueryList | null = null;
 
 function getStore(): Promise<Store> {
-  storePromise ??= load(STORE_FILE, { defaults: { [KEY]: DEFAULT_THEME }, autoSave: false });
+  storePromise ??= load(STORE_FILE, { defaults: { [KEY]: DEFAULT_CHOICE }, autoSave: false });
   return storePromise;
 }
 
-function isTheme(v: unknown): v is ThemeName {
-  return v === "vol-de-nuit" || v === "inkstone";
+function isChoice(v: unknown): v is ThemeChoice {
+  return v === "vol-de-nuit" || v === "inkstone" || v === "auto";
+}
+
+function systemIsDark(): boolean {
+  return mq?.matches ?? false;
+}
+
+function resolve(c: ThemeChoice): ThemeName {
+  if (c === "auto") return systemIsDark() ? "vol-de-nuit" : "inkstone";
+  return c;
+}
+
+function applyToDOM(): void {
+  document.documentElement.dataset.themeChoice = choice;
+  document.documentElement.dataset.theme = resolve(choice);
 }
 
 export function currentTheme(): ThemeName {
   const v = document.documentElement.dataset.theme;
-  return isTheme(v) ? v : DEFAULT_THEME;
+  return v === "vol-de-nuit" || v === "inkstone" ? v : "vol-de-nuit";
 }
 
-function apply(theme: ThemeName): void {
-  document.documentElement.dataset.theme = theme;
+export function currentChoice(): ThemeChoice {
+  return choice;
 }
 
-// index.html 已寫死預設 data-theme 防首幀閃爍；這裡只在儲存值不同時切換
+export function onThemeChange(cb: () => void): void {
+  changeCallback = cb;
+}
+
 export async function initTheme(): Promise<void> {
+  if (typeof window.matchMedia === "function") {
+    mq = window.matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener("change", () => {
+      if (choice === "auto") {
+        applyToDOM();
+        changeCallback?.();
+      }
+    });
+  }
   try {
     const saved = await (await getStore()).get(KEY);
-    if (isTheme(saved)) apply(saved);
-  } catch {
-    // store 損毀：維持預設，靜默（同 recent.ts 錯誤標準）
-  }
+    if (isChoice(saved)) choice = saved;
+  } catch {}
+  applyToDOM();
 }
 
-export async function toggleTheme(): Promise<ThemeName> {
-  const next: ThemeName = currentTheme() === "vol-de-nuit" ? "inkstone" : "vol-de-nuit";
-  apply(next);
+export async function setTheme(next: ThemeChoice): Promise<void> {
+  choice = next;
+  applyToDOM();
   try {
     const store = await getStore();
     await store.set(KEY, next);
     await store.save();
-  } catch {
-    // 持久化失敗不阻斷切換，代價只是下次啟動回到上次成功儲存的主題
-  }
+  } catch {}
+}
+
+export async function toggleTheme(): Promise<ThemeChoice> {
+  const order: ThemeChoice[] = ["vol-de-nuit", "inkstone", "auto"];
+  const idx = order.indexOf(choice);
+  const next = order[(idx + 1) % order.length];
+  await setTheme(next);
   return next;
 }
