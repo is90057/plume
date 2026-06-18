@@ -109,6 +109,7 @@ export async function initMenu(cb: MenuCallbacks, init: MenuInit): Promise<void>
     text: "Focus Mode",
     accelerator: "CmdOrCtrl+Shift+F",
     checked: false,
+    enabled: document.body.dataset.mode === "write", // 只歸「撰」（決策 42）
     action: () => {
       focusState = !focusState;
       cb.onToggleFocus(focusState);
@@ -119,6 +120,7 @@ export async function initMenu(cb: MenuCallbacks, init: MenuInit): Promise<void>
     text: "Typewriter Mode",
     accelerator: "CmdOrCtrl+T",
     checked: false,
+    enabled: document.body.dataset.mode === "write", // 只歸「撰」（決策 42）
     action: () => {
       typewriterState = !typewriterState;
       cb.onToggleTypewriter(typewriterState);
@@ -228,6 +230,12 @@ export function resetWritingToolsMenu(): void {
   typewriterState = false;
   void focusMenuItem?.setChecked(false);
   void typewriterMenuItem?.setChecked(false);
+}
+
+// Focus/Typewriter 只歸「撰」：非撰態停用選單項，從根本擋掉 split/read 開啟（決策 42）
+export function setWritingToolsEnabled(enabled: boolean): void {
+  void focusMenuItem?.setEnabled(enabled);
+  void typewriterMenuItem?.setEnabled(enabled);
 }
 
 export function updateThemeMenu(choice: ThemeChoice): void {

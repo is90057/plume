@@ -178,8 +178,9 @@ html[data-theme="inkstone"] #toolbar button:hover {
   border-radius: 0 6px 6px 0;
 }
 
-#mode-switch button[aria-pressed="true"],
-#mode-switch button[aria-pressed="true"]:hover {
+/* #toolbar 前綴提升 specificity，蓋過 inkstone 的 html[data-theme] #toolbar button 規則 */
+#toolbar #mode-switch button[aria-pressed="true"],
+#toolbar #mode-switch button[aria-pressed="true"]:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--bg);

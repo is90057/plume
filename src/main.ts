@@ -27,7 +27,7 @@ import { currentChoice, initTheme, onThemeChange, setTheme, toggleTheme } from "
 import { currentFont, decreaseSize, increaseSize, initReadingPrefs, resetSize, setFont } from "./reading-prefs";
 import { initStatusbar, setDirty, updateStats } from "./statusbar";
 import { initToc, updateToc } from "./toc";
-import { initMenu, resetWritingToolsMenu, updateModeMenu, updateThemeMenu, type Mode } from "./menu";
+import { initMenu, resetWritingToolsMenu, setWritingToolsEnabled, updateModeMenu, updateThemeMenu, type Mode } from "./menu";
 import { toggleShortcuts, hideShortcuts } from "./shortcuts";
 
 const editorEl = document.querySelector<HTMLElement>("#editor")!;
@@ -44,6 +44,7 @@ onLoad((kind) => {
 });
 
 const modeSwitch = document.querySelector<HTMLElement>("#mode-switch")!;
+updateModeSwitch((document.body.dataset.mode as Mode) || "read"); // 啟動即同步 segmented，避免初始/openExternal 失敗路徑懸空
 
 function setMode(mode: Mode): void {
   document.body.dataset.mode = mode;
@@ -53,11 +54,14 @@ function setMode(mode: Mode): void {
     delete document.body.dataset.fullscreen;
     remeasure();
   }
-  if (mode !== "write") {
-    // Focus/Typewriter 只歸「撰」：一離開沉浸態就關閉（決策 42，split 裡開會被預覽稀釋）
+  if (mode === "write") {
+    setWritingToolsEnabled(true); // 撰態才開放 Focus/Typewriter
+  } else {
+    // Focus/Typewriter 只歸「撰」：離開沉浸態即關閉並停用選單（決策 42，split 裡開會被預覽稀釋）
     reconfigureFocus([]);
     reconfigureTypewriter([]);
     resetWritingToolsMenu();
+    setWritingToolsEnabled(false);
   }
   updateModeSwitch(mode);
   updateModeMenu(mode);
