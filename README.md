@@ -78,7 +78,7 @@ flowchart LR
     end
     subgraph Rust["Rust 核心（src-tauri）"]
         Plugins["官方 Plugins<br/>dialog / fs / store<br/>persisted-scope / opener"]
-        Commands["自訂 Commands<br/>grant_scope / get_opened_urls<br/>list_codex_files"]
+        Commands["自訂 Commands<br/>grant_scope / get_opened_urls<br/>list_codex_files / pick_codex_root"]
     end
     Editor -- "onChange (debounce 50ms)" --> Renderer --> Preview
     UX -. "作用於編輯 / 預覽 / 文件" .-> Pipeline
@@ -91,7 +91,7 @@ flowchart LR
     Commands -- "fs scope 授權" --> Plugins
 ```
 
-**設計原則**：讀寫雙主——開檔進全幅閱讀（閱），動筆切沉浸寫作（撰），讀寫對等而非主從，要邊寫邊對照就用分欄（參）；專注、打字機、即時預覽在寫作態一個不少。Markdown 渲染管線完整留在前端（同步、零 IPC、零 race condition），mermaid 與 KaTeX 是懶載入的後處理；圍繞這條主幹的是體驗層（主題、字型、專注/打字機、選單、目錄、冊），不改變資料流，只調整呈現。Rust 端負責檔案 I/O、對話框、系統整合，以及三個自訂 command——`grant_scope`（拖曳與檔案關聯的外部路徑授權，含 symlink 解析與副檔名驗證，也處理資料夾拖曳的 README 查找）、`get_opened_urls`（OS 傳入的冷啟動檔案路徑），以及 `list_codex_files`（冊的資料夾唯讀遞迴列舉 `.md`，只回路徑、完全不開目錄 fs scope——「能列目錄」不等於「能讀內容」，點檔仍走 `grant_scope` 單檔授權，承重牆零增量）。
+**設計原則**：讀寫雙主——開檔進全幅閱讀（閱），動筆切沉浸寫作（撰），讀寫對等而非主從，要邊寫邊對照就用分欄（參）；專注、打字機、即時預覽在寫作態一個不少。Markdown 渲染管線完整留在前端（同步、零 IPC、零 race condition），mermaid 與 KaTeX 是懶載入的後處理；圍繞這條主幹的是體驗層（主題、字型、專注/打字機、選單、目錄、冊），不改變資料流，只調整呈現。Rust 端負責檔案 I/O、對話框、系統整合，以及四個自訂 command——`grant_scope`（拖曳與檔案關聯的外部路徑授權，含 symlink 解析與副檔名驗證，也處理資料夾拖曳的 README 查找）、`get_opened_urls`（OS 傳入的冷啟動檔案路徑）、`list_codex_files`（冊的資料夾唯讀遞迴列舉 `.md`，只回路徑、完全不開目錄 fs scope——「能列目錄」不等於「能讀內容」，點檔仍走 `grant_scope` 單檔授權，承重牆零增量），以及 `pick_codex_root`（冊根目錄授權：Rust 端持有原生資料夾 dialog，選取路徑經 canonicalize 後才入白名單，前端無法注入任意路徑）。
 
 ## 技術棧
 
@@ -124,9 +124,9 @@ flowchart LR
 | macOS（Intel） | `Plume_x.y.z_x64.dmg` |
 | Windows x64 | `Plume_x.y.z_x64-setup.exe`（NSIS）或 `Plume_x.y.z_x64_en-US.msi` |
 
-> **macOS 首次開啟**：安裝檔未經 Apple 公證（個人工具，沒走付費簽章），Gatekeeper 會攔下。對 Plume.app 按右鍵 →「打開」確認一次即可；或在終端機執行 `xattr -cr /Applications/Plume.app`。
+> **macOS 首次開啟**：安裝檔未經 Apple 公證，Gatekeeper 會攔下。對 Plume.app 按右鍵 →「打開」確認一次即可。
 >
-> **Windows**：由 CI 打包，尚未在實機完整驗證（輸入法、檔案對話框等行為），遇到問題請開 issue。
+> **Windows（實驗性）**：CI 自動打包，安裝檔未經程式碼簽章，Windows SmartScreen 會顯示警告。未在實機完整驗證（輸入法、檔案對話框等），遇到問題請開 issue。
 
 ### 從原始碼建置
 
@@ -185,6 +185,13 @@ markdown-tool/
 ```
 
 版本演進見 [CHANGELOG](CHANGELOG.md)。
+
+## Roadmap
+
+| 項目 | 狀態 |
+|------|------|
+| Apple 公證 + 自動更新 | 規劃中 |
+| PDF 匯出 | 規劃中 |
 
 ---
 

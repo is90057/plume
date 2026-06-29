@@ -78,7 +78,7 @@ flowchart LR
     end
     subgraph Rust["Rust core (src-tauri)"]
         Plugins["official plugins<br/>dialog / fs / store<br/>persisted-scope / opener"]
-        Commands["custom commands<br/>grant_scope / get_opened_urls<br/>list_codex_files"]
+        Commands["custom commands<br/>grant_scope / get_opened_urls<br/>list_codex_files / pick_codex_root"]
     end
     Editor -- "onChange (debounce 50ms)" --> Renderer --> Preview
     UX -. "acts on editor / preview / document" .-> Pipeline
@@ -91,7 +91,7 @@ flowchart LR
     Commands -- "fs scope grant" --> Plugins
 ```
 
-**Design principle:** reading and writing as equals — files open into full-width reading (Read), picking up the pen switches to immersive writing (Compose), with Split in between for writing against the preview. Focus, typewriter, and live preview are all there in the writing modes. The entire Markdown pipeline stays in the frontend (synchronous, zero IPC, zero race conditions), with mermaid and KaTeX as lazy-loaded post-processing. Wrapped around that spine is an experience layer (theme, font, focus/typewriter, menu, TOC, Codex) that changes presentation without touching the data flow. Rust handles file I/O, dialogs, OS integration, and three custom commands: `grant_scope` (per-file fs-scope authorization for drag-drop and file-association paths, with symlink resolution and extension validation; also handles folder drops by discovering README.md), `get_opened_urls` (cold-start file paths from the OS), and `list_codex_files` (a read-only recursive listing of a Codex folder's `.md` files — returns paths only and never opens a directory fs scope; "can list a directory" is not "can read its contents," so clicking a file still goes through per-file `grant_scope` and the load-bearing wall stays intact).
+**Design principle:** reading and writing as equals — files open into full-width reading (Read), picking up the pen switches to immersive writing (Compose), with Split in between for writing against the preview. Focus, typewriter, and live preview are all there in the writing modes. The entire Markdown pipeline stays in the frontend (synchronous, zero IPC, zero race conditions), with mermaid and KaTeX as lazy-loaded post-processing. Wrapped around that spine is an experience layer (theme, font, focus/typewriter, menu, TOC, Codex) that changes presentation without touching the data flow. Rust handles file I/O, dialogs, OS integration, and four custom commands: `grant_scope` (per-file fs-scope authorization for drag-drop and file-association paths, with symlink resolution and extension validation; also handles folder drops by discovering README.md), `get_opened_urls` (cold-start file paths from the OS), `list_codex_files` (a read-only recursive listing of a Codex folder's `.md` files — returns paths only and never opens a directory fs scope; "can list a directory" is not "can read its contents," so clicking a file still goes through per-file `grant_scope` and the load-bearing wall stays intact), and `pick_codex_root` (Codex root authorization — a native folder dialog owned by Rust; the selected path is canonicalized before joining an approved-roots allowlist, so the frontend cannot inject arbitrary paths).
 
 ## Tech stack
 
@@ -124,9 +124,9 @@ Grab the installer for your platform from [Releases](https://github.com/tznthou/
 | macOS (Intel) | `Plume_x.y.z_x64.dmg` |
 | Windows x64 | `Plume_x.y.z_x64-setup.exe` (NSIS) or `Plume_x.y.z_x64_en-US.msi` |
 
-> **First launch on macOS:** the app isn't notarized (personal tool, no paid certificate), so Gatekeeper will balk. Right-click Plume.app → "Open" and confirm once, or run `xattr -cr /Applications/Plume.app`.
+> **First launch on macOS:** the app isn't notarized, so Gatekeeper will block it. Right-click Plume.app → "Open" and confirm once.
 >
-> **Windows:** packaged by CI but not fully field-tested (IME behavior, file dialogs). Open an issue if something breaks.
+> **Windows (experimental):** built by CI without code signing — SmartScreen will show a warning. Not fully field-tested (IME, file dialogs). Open an issue if something breaks.
 
 ### Build from source
 
@@ -185,6 +185,13 @@ markdown-tool/
 ```
 
 See the [CHANGELOG](CHANGELOG_EN.md) for the version history.
+
+## Roadmap
+
+| Item | Status |
+|------|--------|
+| Apple notarization + auto-update | Planned |
+| PDF export | Planned |
 
 ---
 
