@@ -11,6 +11,7 @@ import { render } from "./renderer";
 import {
   copyHtml,
   exportHtml,
+  exportPdf,
   initFileModule,
   markDirty,
   newFile,
@@ -105,6 +106,7 @@ void Promise.all([initTheme(), initReadingPrefs()]).then(() => {
     onSave: doSave,
     onSaveAs: doSaveAs,
     onExport: () => void exportHtml(),
+    onExportPdf: () => void exportPdf(),
     onSetMode: setMode,
     onToggleFocus: (checked) => {
       reconfigureFocus(checked ? focusExtension() : []);
@@ -186,7 +188,26 @@ const doSaveAs = withRecentRefresh(saveAs);
 document.querySelector("#btn-new")!.addEventListener("click", doNew);
 document.querySelector("#btn-open")!.addEventListener("click", doOpen);
 document.querySelector("#btn-save")!.addEventListener("click", doSave);
-document.querySelector("#btn-export")!.addEventListener("click", () => void exportHtml());
+const exportDropdown = document.querySelector("#export-dropdown")!;
+const btnExport = document.querySelector("#btn-export")!;
+btnExport.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = exportDropdown.classList.contains("open");
+  if (isOpen) {
+    exportDropdown.classList.remove("open");
+    btnExport.setAttribute("aria-expanded", "false");
+  } else {
+    exportDropdown.classList.add("open");
+    btnExport.setAttribute("aria-expanded", "true");
+  }
+});
+document.addEventListener("click", () => {
+  exportDropdown.classList.remove("open");
+  btnExport.setAttribute("aria-expanded", "false");
+});
+
+document.querySelector("#btn-export-html")!.addEventListener("click", () => void exportHtml());
+document.querySelector("#btn-export-pdf")!.addEventListener("click", () => void exportPdf());
 document.querySelector("#btn-theme")!.addEventListener("click", () => {
   void toggleTheme().then((choice) => {
     update(render(getContent()));

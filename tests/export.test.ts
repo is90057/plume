@@ -11,6 +11,7 @@ const dialogMocks = vi.hoisted(() => ({
 const fsMocks = vi.hoisted(() => ({
   readTextFile: vi.fn(),
   writeTextFile: vi.fn(),
+  writeFile: vi.fn(),
 }));
 const editorMocks = vi.hoisted(() => ({
   getContent: vi.fn(),
@@ -30,6 +31,16 @@ vi.mock("@tauri-apps/api/window", () => ({
 }));
 vi.mock("../src/editor", () => editorMocks);
 vi.mock("../src/recent", () => recentMocks);
+
+const html2pdfMocks = vi.hoisted(() => {
+  const from = vi.fn().mockReturnThis();
+  const set = vi.fn().mockReturnThis();
+  const outputPdf = vi.fn().mockResolvedValue(new ArrayBuffer(10));
+  return vi.fn().mockReturnValue({ from, set, outputPdf });
+});
+vi.mock("html2pdf.js", () => ({
+  default: html2pdfMocks,
+}));
 
 async function loadFileModule() {
   vi.resetModules();
@@ -120,4 +131,48 @@ describe("export", () => {
     expect(html).not.toContain("</title><script>"); // 未轉義會破出 title 注入 script
     expect(html).toContain("&lt;/title&gt;&lt;script&gt;"); // 轉義後為純文字
   });
+
+  it("test_exportPdf_usesCurrentEditorContentInsteadOfStalePreview", async () => {
+    dialogMocks.save.mockResolvedValue("/tmp/out.pdf");
+    fsMocks.writeFile.mockResolvedValue(undefined);
+    editorMocks.getContent.mockReturnValue("# Fresh title\n\nFresh content");
+
+    const previewDiv = document.createElement("div");
+    previewDiv.id = "preview";
+    previewDiv.innerHTML = "<p>stale preview</p>";
+    document.body.appendChild(previewDiv);
+
+    const file = await loadFileModule();
+    await file.exportPdf();
+
+    const exportTarget = html2pdfMocks.mock.results[0].value.from.mock.calls[0][0] as HTMLElement;
+    expect(exportTarget.textContent).toContain("Fresh title");
+    expect(exportTarget.textContent).toContain("Fresh content");
+    expect(exportTarget.textContent).not.toContain("stale preview");
+
+    previewDiv.remove();
+  });
+
+  it("test_exportPdf_savesFileCorrectly", async () => {
+    dialogMocks.save.mockResolvedValue("/tmp/out.pdf");
+    fsMocks.writeFile.mockResolvedValue(undefined);
+    editorMocks.getContent.mockReturnValue("# Title\n\nSome text");
+
+    const previewDiv = document.createElement("div");
+    previewDiv.id = "preview";
+    previewDiv.innerHTML = "<h1>Title</h1><p>Some text</p>";
+    document.body.appendChild(previewDiv);
+
+    const file = await loadFileModule();
+    await file.exportPdf();
+
+    expect(dialogMocks.save).toHaveBeenCalledOnce();
+    expect(fsMocks.writeFile).toHaveBeenCalledOnce();
+    const [targetPath, binaryData] = fsMocks.writeFile.mock.calls[0];
+    expect(targetPath).toBe("/tmp/out.pdf");
+    expect(binaryData).toBeInstanceOf(Uint8Array);
+
+    previewDiv.remove();
+  });
 });
+

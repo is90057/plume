@@ -5,6 +5,7 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
+    "core:webview:allow-print",
     "core:window:allow-close",
     "core:window:allow-destroy",
     "core:window:allow-set-title",
@@ -14,6 +15,7 @@
     "dialog:allow-message",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
+    "fs:allow-write-file",
     "store:default",
     {
       "identifier": "opener:allow-open-url",

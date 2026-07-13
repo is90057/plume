@@ -203,6 +203,72 @@ html[data-theme-choice="auto"][data-theme="inkstone"] #btn-theme .theme-name::be
   content: "自動";
 }
 
+/* ===== 匯出下拉選單 ===== */
+#export-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+#export-dropdown .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 110px;
+}
+
+html[data-theme="vol-de-nuit"] #export-dropdown .dropdown-menu {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(230, 233, 240, 0.05);
+}
+
+#export-dropdown .dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#export-dropdown .dropdown-menu button:first-child {
+  border-radius: 5px 5px 0 0;
+}
+
+#export-dropdown .dropdown-menu button:last-child {
+  border-radius: 0 0 5px 5px;
+}
+
+#export-dropdown .dropdown-menu button:hover {
+  background: var(--bg-inset) !important;
+  color: var(--accent) !important;
+}
+
+html[data-theme="inkstone"] #export-dropdown .dropdown-menu button {
+  color: var(--fg-muted);
+}
+
+html[data-theme="inkstone"] #export-dropdown .dropdown-menu button:hover {
+  color: var(--fg) !important;
+  background: rgba(31, 29, 26, 0.05) !important;
+}
+
+#export-dropdown.open .dropdown-menu {
+  display: block;
+}
+
 #recent-list {
   margin-left: auto;
   max-width: 220px;
@@ -1407,3 +1473,107 @@ html[data-theme="inkstone"] .shortcuts-card {
     transition: none !important;
   }
 }
+
+/* ===== 匯出 PDF / 列印樣式 ===== */
+
+@media print {
+  @page {
+    margin: 20mm;
+  }
+
+  /* 強制白底黑字，確保即使在夜航主題下匯出 PDF 也是高對比黑白排版 */
+  :root, html, [data-theme] {
+    --bg: #ffffff !important;
+    --bg-panel: #ffffff !important;
+    --bg-inset: #ffffff !important;
+    --fg: #000000 !important;
+    --fg-strong: #000000 !important;
+    --fg-muted: #444444 !important;
+    --accent: #000000 !important;
+    --accent-2: #222222 !important;
+    --line: #dddddd !important;
+  }
+
+  html, body, html[data-theme="vol-de-nuit"] body {
+    background: #ffffff !important;
+    background-image: none !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  html[data-theme="inkstone"] body::after {
+    display: none !important;
+  }
+
+  /* 隱藏非列印元素 */
+  #toolbar,
+  #statusbar,
+  #codex,
+  #toc,
+  #editor,
+  #illos,
+  #btn-exit-fullscreen,
+  .shortcuts-overlay {
+    display: none !important;
+  }
+
+  /* 重置排版容器，使其能在紙張上自然捲動分頁 */
+  main {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #preview {
+    display: block !important;
+    flex: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    position: static !important;
+    background: transparent !important;
+    color: #000000 !important;
+    overscroll-behavior: auto !important;
+  }
+
+  /* 優化文字列印色彩與對比 */
+  #preview * {
+    color: #000000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  #preview pre, #preview code {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+  }
+
+  /* 避免標題單獨留在頁尾 */
+  #preview h1,
+  #preview h2,
+  #preview h3,
+  #preview h4,
+  #preview h5,
+  #preview h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* 避免區塊在頁面交界處被攔腰切斷 */
+  #preview pre,
+  #preview blockquote,
+  #preview img,
+  #preview table,
+  #preview tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+

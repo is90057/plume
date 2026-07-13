@@ -3,11 +3,13 @@
 // 此處只維護 path/dirty。匯出 HTML 於 Task 7 加入。
 import { invoke } from "@tauri-apps/api/core";
 import { ask, message, open, save } from "@tauri-apps/plugin-dialog";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { readTextFile, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import DOMPurify from "dompurify";
 import hljsThemeCss from "highlight.js/styles/github.css?raw";
 import { getContent, setContent } from "./editor";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 import { escapeHtml, render } from "./renderer";
 import { addRecent, removeRecent } from "./recent";
 
@@ -52,6 +54,8 @@ export function onLoad(cb: (kind: LoadKind) => void): void {
 
 async function updateTitle(): Promise<void> {
   dirtyListener?.(doc.dirty);
+  const name = fileName().replace(/\.(md|markdown)$/i, "");
+  document.title = name;
   await getCurrentWindow().setTitle(`${fileName()}${doc.dirty ? " ●" : ""}`);
 }
 
@@ -264,6 +268,128 @@ export async function exportHtml(): Promise<void> {
   } catch (e) {
     // 匯出是副本輸出，不碰 DocState；失敗同寫檔標準：阻斷 dialog 顯示原因
     await message(`匯出失敗：${String(e)}`, { title: "匯出失敗", kind: "error" });
+  }
+}
+
+export async function exportPdf(): Promise<void> {
+  const target = await save({
+    filters: [{ name: "PDF", extensions: ["pdf"] }],
+    defaultPath: fileName().replace(/\.(md|markdown)$/i, "") + ".pdf",
+  });
+  if (target === null) return;
+
+  const renderedHtml = await renderMathForExport(render(getContent()));
+  const exportRoot = document.createElement("div");
+  exportRoot.id = "export-pdf-root";
+  // 不可用 position:fixed/-9999px 離屏——html2pdf.js 內部會 deepClone 本元素，
+  // clone 會原樣帶走 inline position:fixed，導致 clone 脫離 html2pdf 自己的
+  // on-screen 擷取容器、被定位到視窗外，html2canvas 擷到空白頁。
+  // 保持 normal flow，掛在 <html>（非 <body>）下——body 是 flex 容器會擠壓高度，
+  // 而 html/body 既有的 overflow:hidden（見 style.css 頂部 rubber-band 註解）
+  // 會把 body 高度以外的內容裁掉，效果同樣不可見，且不干擾 html2pdf 的 clone 佈局。
+  exportRoot.style.width = "100%";
+  exportRoot.style.background = "#ffffff";
+  exportRoot.style.color = "#111111";
+  exportRoot.style.padding = "24px 32px";
+  exportRoot.style.boxSizing = "border-box";
+
+  const exportStyle = document.createElement("style");
+  exportStyle.textContent = `
+    #export-pdf-root {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 24px 32px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #1f2328;
+      word-wrap: break-word;
+      background: #ffffff;
+    }
+    #export-pdf-root h1, #export-pdf-root h2, #export-pdf-root h3, #export-pdf-root h4, #export-pdf-root h5, #export-pdf-root h6 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    #export-pdf-root h1 { font-size: 2em; padding-bottom: 0.3em; border-bottom: 1px solid #d1d9e0; }
+    #export-pdf-root h2 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid #d1d9e0; }
+    #export-pdf-root h3 { font-size: 1.25em; }
+    #export-pdf-root h4 { font-size: 1em; }
+    #export-pdf-root h5 { font-size: 0.875em; }
+    #export-pdf-root h6 { font-size: 0.85em; color: #59636e; }
+    #export-pdf-root p, #export-pdf-root blockquote, #export-pdf-root ul, #export-pdf-root ol, #export-pdf-root dl, #export-pdf-root table, #export-pdf-root pre {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+    #export-pdf-root a { color: #0969da; text-decoration: none; }
+    #export-pdf-root a:hover { text-decoration: underline; }
+    #export-pdf-root blockquote { padding: 0 1em; color: #59636e; border-left: 0.25em solid #d1d9e0; }
+    #export-pdf-root ul, #export-pdf-root ol { padding-left: 2em; }
+    #export-pdf-root li + li { margin-top: 0.25em; }
+    #export-pdf-root img { max-width: 100%; }
+    #export-pdf-root hr { height: 0.25em; margin: 24px 0; padding: 0; background: #d1d9e0; border: 0; }
+    #export-pdf-root code, #export-pdf-root pre { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+    #export-pdf-root code { padding: 0.2em 0.4em; font-size: 85%; background: rgba(175, 184, 193, 0.2); border-radius: 6px; }
+    #export-pdf-root pre { padding: 16px; overflow: auto; font-size: 85%; line-height: 1.45; background: #f6f8fa; border-radius: 6px; }
+    #export-pdf-root pre code { padding: 0; font-size: 100%; background: transparent; border-radius: 0; }
+    #export-pdf-root table { display: block; max-width: 100%; overflow: auto; border-collapse: collapse; border-spacing: 0; }
+    #export-pdf-root th, #export-pdf-root td { padding: 6px 13px; border: 1px solid #d1d9e0; }
+    #export-pdf-root th { font-weight: 600; }
+    #export-pdf-root tbody tr:nth-child(2n) { background: #f6f8fa; }
+    #export-pdf-root .task-list-item { list-style-type: none; }
+    #export-pdf-root .task-list-item-checkbox { margin: 0 0.2em 0.25em -1.4em; vertical-align: middle; }
+    #export-pdf-root .footnote-ref a { text-decoration: none; color: #0969da; vertical-align: super; font-size: 0.85em; }
+    #export-pdf-root .footnotes-sep { margin: 2em 0 1em; border: none; border-top: 1px solid #d1d9e0; }
+    #export-pdf-root .footnotes { font-size: 0.9em; color: #59636e; }
+    #export-pdf-root .footnote-backref { text-decoration: none; margin-left: 0.25em; }
+    ${hljsThemeCss}
+  `;
+  exportRoot.appendChild(exportStyle);
+
+  const contentWrap = document.createElement("div");
+  contentWrap.style.width = "100%";
+  contentWrap.style.maxWidth = "800px";
+  contentWrap.style.margin = "0 auto";
+  contentWrap.style.background = "#ffffff";
+  contentWrap.innerHTML = renderedHtml;
+  exportRoot.appendChild(contentWrap);
+  document.documentElement.appendChild(exportRoot);
+
+  const name = fileName().replace(/\.(md|markdown)$/i, "");
+  const opt = {
+    margin: 15,
+    filename: name + ".pdf",
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 1.5,
+      useCORS: true,
+      logging: false,
+      scrollY: 0,
+      scrollX: 0,
+      background: "#ffffff",
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: {
+      mode: ["avoid-all", "css"],
+      avoid: ["pre", "blockquote", "img", "table", "tr"],
+    },
+  };
+
+  try {
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 50)));
+
+    const arrayBuffer = await html2pdf()
+      .from(exportRoot)
+      .set(opt)
+      .outputPdf("arraybuffer");
+
+    const uint8Array = new Uint8Array(arrayBuffer);
+    await writeFile(target, uint8Array);
+  } catch (e) {
+    await message(`匯出 PDF 失敗：${String(e)}`, { title: "匯出失敗", kind: "error" });
+  } finally {
+    exportRoot.remove();
   }
 }
 
