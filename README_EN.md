@@ -39,6 +39,7 @@ Plume splits reading and writing into three modes — Compose (immersive writing
 | **Typewriter mode** `⌘T` | The cursor line stays pinned to the vertical center of the screen while text scrolls up; even the top of the document can be centered — a Compose-only tool |
 | **Copy as HTML** `⌘⇧C` | Renders the Markdown to HTML on the clipboard, ready to paste into a CMS or blog's HTML editor; math is converted to MathML automatically |
 | **HTML export** | Produces a single self-styled `.html` that renders exactly like the preview |
+| **PDF export** `⌘P` | File ▸ Export PDF uses the native macOS print dialog to produce a vector PDF — text is selectable, searchable, and copyable, with zero external dependencies |
 
 ### Rendering
 
@@ -191,7 +192,7 @@ See the [CHANGELOG](CHANGELOG_EN.md) for the version history.
 | Item | Status |
 |------|--------|
 | Apple notarization + auto-update | Planned |
-| PDF export | Planned |
+| PDF export | v0.10.0 ✓ |
 
 ---
 
