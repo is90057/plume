@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { message } from "@tauri-apps/plugin-dialog";
 import { load, type Store } from "@tauri-apps/plugin-store";
 import { openExternal } from "./file";
+import { t } from "./i18n";
 
 export interface CodexMeta {
   path: string; // 冊根資料夾絕對路徑
@@ -118,7 +119,7 @@ export async function openCodexFolder(): Promise<void> {
   try {
     pick = await invoke<{ root: string; files: string[] } | null>("pick_codex_root");
   } catch {
-    await message("無法開啟資料夾。", { title: "開啟冊失敗", kind: "error" });
+    await message(t("dialogs.openCodexErrorMessage"), { title: t("dialogs.openCodexErrorTitle"), kind: "error" });
     return;
   }
   if (!pick) return; // 使用者取消
@@ -134,8 +135,8 @@ export async function switchCodex(path: string): Promise<void> {
     // 列舉失敗：資料夾已刪/移，或升級後此冊尚未重新授權（決策 50 白名單）。
     // 統一提示重新開啟 + 復原下拉到目前的冊，避免 select 已切、樹仍 stale 的不一致。
     await message(
-      "無法開啟此冊，可能已移動、刪除，或需重新授權；請用「開啟冊」重新選取。",
-      { title: "開啟冊失敗", kind: "error" },
+      t("dialogs.switchCodexErrorMessage"),
+      { title: t("dialogs.switchCodexErrorTitle"), kind: "error" },
     );
     renderHeader();
     return;

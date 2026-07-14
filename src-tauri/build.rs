@@ -7,6 +7,8 @@ fn main() {
                     "get_opened_urls",
                     "list_codex_files",
                     "pick_codex_root",
+                    "load_locales",
+                    "open_locales_dir",
                 ]),
         ),
     )

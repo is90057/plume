@@ -35,7 +35,8 @@ import { currentFont, decreaseSize, increaseSize, initReadingPrefs, resetSize, s
 import { initStatusbar, setDirty, updateStats } from "./statusbar";
 import { initToc, updateToc } from "./toc";
 import { initMenu, resetWritingToolsMenu, setWritingToolsEnabled, updateModeMenu, updateThemeMenu, type Mode } from "./menu";
-import { toggleShortcuts, hideShortcuts } from "./shortcuts";
+import { toggleShortcuts, hideShortcuts, clearShortcutsOverlay } from "./shortcuts";
+import { initI18n, t, currentLanguage, setLanguage, getAvailableLanguages, onLanguageChange } from "./i18n";
 
 const editorEl = document.querySelector<HTMLElement>("#editor")!;
 const previewEl = document.querySelector<HTMLElement>("#preview")!;
@@ -103,8 +104,45 @@ function openCodexAndReveal(): void {
   });
 }
 onThemeChange(() => update(render(getContent())));
-void Promise.all([initTheme(), initReadingPrefs()]).then(() => {
-  void initMenu({
+
+const langSelect = document.querySelector<HTMLSelectElement>("#lang-list")!;
+
+function refreshLangUI(): void {
+  const langs = getAvailableLanguages();
+  langSelect.options.length = 1; // 保留 placeholder
+  for (const l of langs) {
+    const opt = document.createElement("option");
+    opt.value = l.code;
+    opt.textContent = l.name;
+    opt.selected = l.code === currentLanguage();
+    langSelect.append(opt);
+  }
+
+  // Add separator
+  const separatorOpt = document.createElement("option");
+  separatorOpt.disabled = true;
+  separatorOpt.textContent = "──────────";
+  langSelect.append(separatorOpt);
+
+  // Add open folder option
+  const openOpt = document.createElement("option");
+  openOpt.value = "__open_folder__";
+  openOpt.textContent = "📂 " + t("ui.openLocalesFolder");
+  langSelect.append(openOpt);
+}
+
+langSelect.addEventListener("change", () => {
+  const lang = langSelect.value;
+  if (lang === "__open_folder__") {
+    langSelect.value = currentLanguage(); // reset back to active lang
+    invoke("open_locales_dir").catch(console.error);
+  } else if (lang) {
+    void setLanguage(lang);
+  }
+});
+
+function rebuildMenu(): Promise<void> {
+  return initMenu({
     onNew: doNew,
     onOpen: doOpen,
     onOpenCodex: openCodexAndReveal,
@@ -132,6 +170,17 @@ void Promise.all([initTheme(), initReadingPrefs()]).then(() => {
     themeChoice: currentChoice(),
     fontFamily: currentFont(),
   });
+}
+
+onLanguageChange(() => {
+  void rebuildMenu();
+  clearShortcutsOverlay();
+  refreshLangUI();
+});
+
+void Promise.all([initI18n(), initTheme(), initReadingPrefs()]).then(() => {
+  refreshLangUI();
+  void rebuildMenu();
 });
 
 let debounceTimer: number | undefined;
@@ -151,7 +200,7 @@ onChange(() => {
       });
     } catch (e) {
       // SPEC 錯誤處理標準：編輯區不受影響；debounce 每次輸入重跑 render，天然自動重試
-      showError(`渲染發生錯誤（下次輸入會自動重試）：${String(e)}`);
+      showError(t("dialogs.renderErrorMessage", { error: String(e) }));
     }
   }, 50);
 });
