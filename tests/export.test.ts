@@ -17,6 +17,7 @@ const editorMocks = vi.hoisted(() => ({
   getContent: vi.fn(),
   setContent: vi.fn(),
   onChange: vi.fn(),
+  getScrollDOM: vi.fn().mockReturnValue({ scrollTop: 0 }),
 }));
 const recentMocks = vi.hoisted(() => ({
   getRecent: vi.fn(),
