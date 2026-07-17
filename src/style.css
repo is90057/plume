@@ -1397,7 +1397,7 @@ body[data-codex="open"]:not([data-mode="write"]) #codex {
   font-size: 12px;
 }
 
-.codex-add {
+.codex-add, .codex-import, .codex-delete {
   flex-shrink: 0;
   width: 24px;
   height: 24px;
@@ -1410,7 +1410,7 @@ body[data-codex="open"]:not([data-mode="write"]) #codex {
   cursor: pointer;
 }
 
-.codex-add:hover {
+.codex-add:hover, .codex-import:hover, .codex-delete:hover {
   color: var(--accent);
   border-color: var(--accent);
 }

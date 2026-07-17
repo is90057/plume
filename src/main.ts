@@ -27,9 +27,10 @@ import {
   selectTab,
   closeTab,
   onTabsChange,
+  getActiveTab,
 } from "./file";
 import { getRecent } from "./recent";
-import { initCodex, openCodexFolder, restoreCodices } from "./codex";
+import { initCodex, openCodexFolder, restoreCodices, importCodexFolder, deleteCurrentCodex } from "./codex";
 import { currentChoice, initTheme, onThemeChange, setTheme, toggleTheme } from "./theme";
 import { currentFont, decreaseSize, increaseSize, initReadingPrefs, resetSize, setFont } from "./reading-prefs";
 import { initStatusbar, setDirty, updateStats } from "./statusbar";
@@ -103,7 +104,13 @@ function openCodexAndReveal(): void {
     document.body.dataset.codex = "open";
   });
 }
-onThemeChange(() => update(render(getContent())));
+function importCodexAndReveal(): void {
+  void importCodexFolder().then(() => {
+    if (document.body.dataset.mode === "write") setMode("split");
+    document.body.dataset.codex = "open";
+  });
+}
+onThemeChange(() => update(render(getContent(), getActiveTab().path, true)));
 
 const langSelect = document.querySelector<HTMLSelectElement>("#lang-list")!;
 
@@ -161,7 +168,7 @@ function rebuildMenu(): Promise<void> {
     onFullscreen: () => { document.body.dataset.fullscreen = "on"; },
     onCopyHtml: () => void copyHtml(),
     onShortcuts: toggleShortcuts,
-    onSetTheme: (choice) => { void setTheme(choice).then(() => update(render(getContent()))); },
+    onSetTheme: (choice) => { void setTheme(choice).then(() => update(render(getContent(), getActiveTab().path, true))); },
     onSetFont: (family) => { void setFont(family); },
     onFontIncrease: () => { void increaseSize(); },
     onFontDecrease: () => { void decreaseSize(); },
@@ -191,7 +198,7 @@ onChange(() => {
     try {
       const content = getContent();
       const t0 = performance.now();
-      update(render(content));
+      update(render(content, getActiveTab().path, true));
       updateToc();
       updateStats({
         chars: content.replace(/\s/g, "").length, // 寫作直覺的「字數」：不含空白換行
@@ -264,13 +271,15 @@ document.querySelector("#btn-export-html")!.addEventListener("click", () => void
 document.querySelector("#btn-export-pdf")!.addEventListener("click", () => void exportPdf());
 document.querySelector("#btn-theme")!.addEventListener("click", () => {
   void toggleTheme().then((choice) => {
-    update(render(getContent()));
+    update(render(getContent(), getActiveTab().path, true));
     updateThemeMenu(choice);
   });
 });
 document.querySelector("#btn-toc")!.addEventListener("click", toggleToc);
 document.querySelector("#btn-codex")!.addEventListener("click", toggleCodex);
 document.querySelector(".codex-add")!.addEventListener("click", openCodexAndReveal);
+document.querySelector(".codex-import")!.addEventListener("click", importCodexAndReveal);
+document.querySelector(".codex-delete")!.addEventListener("click", () => void deleteCurrentCodex());
 document.querySelector("#btn-fullscreen")!.addEventListener("click", () => {
   document.body.dataset.fullscreen = "on";
 });

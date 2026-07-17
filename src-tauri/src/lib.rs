@@ -29,6 +29,11 @@ fn grant_scope(app: tauri::AppHandle, path: String) -> Result<String, String> {
     app.fs_scope()
         .allow_file(&target)
         .map_err(|e| e.to_string())?;
+    if let Some(parent) = target.parent() {
+        app.fs_scope()
+            .allow_directory(parent, true)
+            .map_err(|e| e.to_string())?;
+    }
     Ok(target.to_string_lossy().into_owned())
 }
 
@@ -241,13 +246,22 @@ fn load_locales(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     "charsAlt": "ALT",
     "linesAlt": "HDG",
     "renderAlt": "ETA",
-    "openLocalesFolder": "開啟語言包資料夾"
+    "openLocalesFolder": "開啟語言包資料夾",
+    "importCodexFolder": "匯入冊資料夾",
+    "deleteCodex": "刪除冊"
   },
   "dialogs": {
     "openCodexErrorTitle": "開啟冊失敗",
     "openCodexErrorMessage": "無法開啟資料夾。",
+    "importCodexErrorTitle": "匯入冊失敗",
+    "importCodexErrorMessage": "無法匯入資料夾。",
+    "deleteCodexConfirmTitle": "刪除冊",
+    "deleteCodexConfirmMessage": "確定要將冊「{name}」從選單中移除嗎？這不會刪除您硬碟上的實際資料夾。",
     "switchCodexErrorTitle": "開啟冊失敗",
     "switchCodexErrorMessage": "無法開啟此冊，可能已移動、刪除，或需重新授權；請用「開啟冊」重新選取。",
+    "deleteNonExistentCodexTitle": "此冊已不存在",
+    "deleteNonExistentCodexMessage": "此冊「{name}」可能已被移動或刪除。是否將其從下拉選單中移除？",
+    "deleteLabel": "刪除",
     "unsavedChangesTitle": "未儲存的變更",
     "unsavedChangesMessage": "「{file}」有未儲存的變更，要儲存嗎？",
     "saveLabel": "儲存",
@@ -362,13 +376,22 @@ fn load_locales(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     "charsAlt": "ALT",
     "linesAlt": "HDG",
     "renderAlt": "ETA",
-    "openLocalesFolder": "Open Locales Folder"
+    "openLocalesFolder": "Open Locales Folder",
+    "importCodexFolder": "Import Codex Folder",
+    "deleteCodex": "Delete Codex"
   },
   "dialogs": {
     "openCodexErrorTitle": "Open Codex Failed",
     "openCodexErrorMessage": "Cannot open folder.",
+    "importCodexErrorTitle": "Import Codex Failed",
+    "importCodexErrorMessage": "Cannot import folder.",
+    "deleteCodexConfirmTitle": "Delete Codex",
+    "deleteCodexConfirmMessage": "Are you sure you want to remove the codex '{name}' from the menu? This will not delete the folder on your hard drive.",
     "switchCodexErrorTitle": "Open Codex Failed",
     "switchCodexErrorMessage": "Cannot open this codex, it might have been moved, deleted, or needs re-authorization. Please use 'Open Codex Folder' to re-select.",
+    "deleteNonExistentCodexTitle": "Codex Does Not Exist",
+    "deleteNonExistentCodexMessage": "This codex '{name}' might have been moved or deleted. Do you want to remove it from the menu?",
+    "deleteLabel": "Delete",
     "unsavedChangesTitle": "Unsaved Changes",
     "unsavedChangesMessage": "「{file}」 has unsaved changes. Do you want to save them?",
     "saveLabel": "Save",
@@ -474,6 +497,27 @@ fn load_locales(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
+async fn import_codex_folder(app: tauri::AppHandle) -> Result<Option<CodexPick>, String> {
+    pick_codex_root(app).await
+}
+
+#[tauri::command]
+async fn delete_codex_folder(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    let p = PathBuf::from(&path);
+    let canonical = p.canonicalize().map_err(|e| e.to_string())?;
+    
+    // Remove from ApprovedRoots
+    {
+        let state = app.state::<ApprovedRoots>();
+        let mut set = state.0.lock().unwrap();
+        set.remove(&canonical);
+        persist_approved_roots(&app, &set);
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
 fn open_locales_dir(app: tauri::AppHandle) -> Result<(), String> {
     let app_dir = app.path().app_local_data_dir().map_err(|e| e.to_string())?;
     let locales_dir = app_dir.join("locales");
@@ -520,7 +564,9 @@ pub fn run() {
             list_codex_files,
             pick_codex_root,
             load_locales,
-            open_locales_dir
+            open_locales_dir,
+            import_codex_folder,
+            delete_codex_folder
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

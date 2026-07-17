@@ -220,6 +220,11 @@ async function writeToPath(tab: Tab, path: string): Promise<boolean> {
   try {
     const contentToSave = tab.id === activeTabId ? (getContent ? (getContent() || "") : "") : tab.content;
     await writeTextFile(path, contentToSave);
+    try {
+      await invoke("grant_scope", { path });
+    } catch (e) {
+      console.warn("grant_scope failed in writeToPath:", e);
+    }
     tab.path = path;
     tab.dirty = false;
     if (tab.id === activeTabId) {
@@ -283,6 +288,12 @@ export async function openFileInTab(path: string, kind: LoadKind = "open"): Prom
   if (existingTab) {
     await selectTab(existingTab.id);
     return;
+  }
+
+  try {
+    await invoke("grant_scope", { path });
+  } catch (e) {
+    console.warn("grant_scope failed in openFileInTab:", e);
   }
 
   try {
@@ -426,7 +437,7 @@ ${bodyHtml}
 }
 
 export async function copyHtml(): Promise<void> {
-  const html = await renderMathForExport(render(getContent()));
+  const html = await renderMathForExport(render(getContent(), getActiveTab().path, false));
   try {
     await navigator.clipboard.writeText(html);
   } catch (e) {
@@ -441,7 +452,7 @@ export async function exportHtml(): Promise<void> {
   });
   if (target === null) return;
   // 經 render() 輸出 = 已過 DOMPurify，sanitize 不可被匯出繞過（SPEC 安全規格）
-  const bodyHtml = await renderMathForExport(render(getContent()));
+  const bodyHtml = await renderMathForExport(render(getContent(), getActiveTab().path, false));
   const html = buildExportHtml(fileName(), bodyHtml);
   try {
     await writeTextFile(target, html);
@@ -458,7 +469,7 @@ export async function exportPdf(): Promise<void> {
   printing = true;
   try {
     document.getElementById("print-container")?.remove();
-    const bodyHtml = await renderMathForExport(render(getContent()));
+    const bodyHtml = await renderMathForExport(render(getContent(), getActiveTab().path, true));
     const container = document.createElement("div");
     container.id = "print-container";
     container.innerHTML =

@@ -30,6 +30,8 @@ let allLocales: Record<string, any> = {
       recentFiles: "最近檔案",
       switchCodex: "切換冊",
       openCodexFolder: "開啟冊資料夾",
+      importCodexFolder: "匯入冊資料夾",
+      deleteCodex: "刪除冊",
       chars: "字數",
       lines: "行數",
       render: "渲染",
@@ -52,8 +54,15 @@ let allLocales: Record<string, any> = {
     dialogs: {
       openCodexErrorTitle: "開啟冊失敗",
       openCodexErrorMessage: "無法開啟資料夾。",
+      importCodexErrorTitle: "匯入冊失敗",
+      importCodexErrorMessage: "無法匯入資料夾。",
+      deleteCodexConfirmTitle: "刪除冊",
+      deleteCodexConfirmMessage: "確定要將冊「{name}」從選單中移除嗎？這不會刪除您硬碟上的實際資料夾。",
       switchCodexErrorTitle: "開啟冊失敗",
       switchCodexErrorMessage: "無法開啟此冊，可能已移動、刪除，或需重新授權；請用「開啟冊」重新選取。",
+      deleteNonExistentCodexTitle: "此冊已不存在",
+      deleteNonExistentCodexMessage: "此冊「{name}」可能已被移動或刪除。是否將其從下拉選單中移除？",
+      deleteLabel: "刪除",
       unsavedChangesTitle: "未儲存的變更",
       unsavedChangesMessage: "「{file}」有未儲存的變更，要儲存嗎？",
       saveLabel: "儲存",
@@ -150,6 +159,8 @@ let allLocales: Record<string, any> = {
       recentFiles: "Recent Files",
       switchCodex: "Switch Codex",
       openCodexFolder: "Open Codex Folder",
+      importCodexFolder: "Import Codex Folder",
+      deleteCodex: "Delete Codex",
       chars: "Chars",
       lines: "Lines",
       render: "Render",
@@ -172,8 +183,15 @@ let allLocales: Record<string, any> = {
     dialogs: {
       openCodexErrorTitle: "Open Codex Failed",
       openCodexErrorMessage: "Cannot open folder.",
+      importCodexErrorTitle: "Import Codex Failed",
+      importCodexErrorMessage: "Cannot import folder.",
+      deleteCodexConfirmTitle: "Delete Codex",
+      deleteCodexConfirmMessage: "Are you sure you want to remove the codex '{name}' from the menu? This will not delete the folder on your hard drive.",
       switchCodexErrorTitle: "Open Codex Failed",
       switchCodexErrorMessage: "Cannot open this codex, it might have been moved, deleted, or needs re-authorization. Please use 'Open Codex Folder' to re-select.",
+      deleteNonExistentCodexTitle: "Codex Does Not Exist",
+      deleteNonExistentCodexMessage: "This codex '{name}' might have been moved or deleted. Do you want to remove it from the menu?",
+      deleteLabel: "Delete",
       unsavedChangesTitle: "Unsaved Changes",
       unsavedChangesMessage: "「{file}」 has unsaved changes. Do you want to save them?",
       saveLabel: "Save",
@@ -335,7 +353,23 @@ export function updateDOMTranslations(): void {
 
 export async function initI18n(): Promise<void> {
   try {
-    allLocales = await invoke<Record<string, any>>("load_locales");
+    const loaded = await invoke<Record<string, any>>("load_locales");
+    // Deep merge loaded locales into allLocales to preserve static fallbacks for new keys
+    for (const [lang, data] of Object.entries(loaded)) {
+      if (!allLocales[lang]) {
+        allLocales[lang] = {};
+      }
+      for (const [section, keys] of Object.entries(data)) {
+        if (typeof keys === "object" && keys !== null) {
+          allLocales[lang][section] = {
+            ...allLocales[lang][section],
+            ...keys,
+          };
+        } else {
+          allLocales[lang][section] = keys;
+        }
+      }
+    }
   } catch (err) {
     console.error("Failed to load locales from Rust backend", err);
     // 保留載入時已 statically 宣告之完整預設語系（zh_Hant 和 en），不予覆寫
