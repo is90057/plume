@@ -38,6 +38,7 @@ import { initToc, updateToc } from "./toc";
 import { initMenu, resetWritingToolsMenu, setWritingToolsEnabled, updateModeMenu, updateThemeMenu, type Mode } from "./menu";
 import { toggleShortcuts, hideShortcuts, clearShortcutsOverlay } from "./shortcuts";
 import { initI18n, t, currentLanguage, setLanguage, getAvailableLanguages, onLanguageChange } from "./i18n";
+import { initSettings, hideSettings } from "./settings";
 
 const editorEl = document.querySelector<HTMLElement>("#editor")!;
 const previewEl = document.querySelector<HTMLElement>("#preview")!;
@@ -47,6 +48,7 @@ initPreview(previewEl, getScrollDOM());
 initToc(document.querySelector<HTMLElement>("#toc")!, previewEl);
 initCodex(document.querySelector<HTMLElement>("#codex")!);
 initStatusbar();
+initSettings();
 onDirtyChange(setDirty); // dirty 指示：03 指針垂落 / 05 硃砂印
 onLoad((kind) => {
   scrollToTopOnNextUpdate();
@@ -294,6 +296,7 @@ for (const btn of modeButtons) {
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    if (hideSettings()) return;
     if (hideShortcuts()) return;
     if (document.body.dataset.fullscreen === "on") {
       delete document.body.dataset.fullscreen;
