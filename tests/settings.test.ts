@@ -28,6 +28,12 @@ beforeEach(() => {
     <div id="settings-overlay" class="settings-overlay" hidden>
       <div class="settings-card">
         <button id="btn-close-settings">✕</button>
+        <select id="theme-list">
+          <option value="vol-de-nuit">暗夜飛行</option>
+          <option value="inkstone">硯台</option>
+          <option value="auto">自動</option>
+        </select>
+        <select id="lang-list"></select>
         <span id="app-version"></span>
         <button id="btn-check-update">檢查更新</button>
         <div id="update-status" hidden></div>

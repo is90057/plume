@@ -112,9 +112,29 @@ function importCodexAndReveal(): void {
     document.body.dataset.codex = "open";
   });
 }
-onThemeChange(() => update(render(getContent(), getActiveTab().path, true)));
+onThemeChange(() => {
+  refreshThemeUI();
+  update(render(getContent(), getActiveTab().path, true));
+});
 
 const langSelect = document.querySelector<HTMLSelectElement>("#lang-list")!;
+const themeSelect = document.querySelector<HTMLSelectElement>("#theme-list");
+
+function refreshThemeUI(): void {
+  if (themeSelect) {
+    themeSelect.value = currentChoice();
+  }
+}
+
+themeSelect?.addEventListener("change", () => {
+  const choice = themeSelect.value as ThemeChoice;
+  if (choice) {
+    void setTheme(choice).then(() => {
+      update(render(getContent(), getActiveTab().path, true));
+      updateThemeMenu(choice);
+    });
+  }
+});
 
 function refreshLangUI(): void {
   const langs = getAvailableLanguages();
@@ -170,7 +190,12 @@ function rebuildMenu(): Promise<void> {
     onFullscreen: () => { document.body.dataset.fullscreen = "on"; },
     onCopyHtml: () => void copyHtml(),
     onShortcuts: toggleShortcuts,
-    onSetTheme: (choice) => { void setTheme(choice).then(() => update(render(getContent(), getActiveTab().path, true))); },
+    onSetTheme: (choice) => {
+      void setTheme(choice).then(() => {
+        update(render(getContent(), getActiveTab().path, true));
+        refreshThemeUI();
+      });
+    },
     onSetFont: (family) => { void setFont(family); },
     onFontIncrease: () => { void increaseSize(); },
     onFontDecrease: () => { void decreaseSize(); },
@@ -189,6 +214,7 @@ onLanguageChange(() => {
 
 void Promise.all([initI18n(), initTheme(), initReadingPrefs()]).then(() => {
   refreshLangUI();
+  refreshThemeUI();
   void rebuildMenu();
 });
 
@@ -271,13 +297,7 @@ document.addEventListener("click", () => {
 
 document.querySelector("#btn-export-html")!.addEventListener("click", () => void exportHtml());
 document.querySelector("#btn-export-pdf")!.addEventListener("click", () => void exportPdf());
-document.querySelector("#btn-theme")!.addEventListener("click", () => {
-  void toggleTheme().then((choice) => {
-    update(render(getContent(), getActiveTab().path, true));
-    updateThemeMenu(choice);
-  });
-});
-document.querySelector("#btn-toc")!.addEventListener("click", toggleToc);
+document.querySelector("#btn-toc")?.addEventListener("click", toggleToc);
 document.querySelector("#btn-codex")!.addEventListener("click", toggleCodex);
 document.querySelector(".codex-add")!.addEventListener("click", openCodexAndReveal);
 document.querySelector(".codex-import")!.addEventListener("click", importCodexAndReveal);
