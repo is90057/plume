@@ -162,12 +162,15 @@ export async function runUpdateCheckUI(): Promise<void> {
   }
 }
 
-export function initSettings(): void {
+export function initSettings(options?: {
+  onOpenThemesFolder?: () => void;
+}): void {
   overlay = document.querySelector<HTMLElement>("#settings-overlay");
   const btnSettings = document.querySelector<HTMLButtonElement>("#btn-settings");
   const btnClose = document.querySelector<HTMLButtonElement>("#btn-close-settings");
   const versionEl = document.querySelector<HTMLElement>("#app-version");
   const btnCheckUpdate = document.querySelector<HTMLButtonElement>("#btn-check-update");
+  const btnOpenThemes = document.querySelector<HTMLButtonElement>("#btn-open-themes");
 
   if (versionEl) {
     void getAppVersion().then((ver) => {
@@ -183,6 +186,10 @@ export function initSettings(): void {
 
   btnCheckUpdate?.addEventListener("click", () => {
     void runUpdateCheckUI();
+  });
+
+  btnOpenThemes?.addEventListener("click", () => {
+    options?.onOpenThemesFolder?.();
   });
 
   overlay?.addEventListener("click", (e) => {

@@ -170,11 +170,14 @@
         <div class="settings-body">
           <div class="settings-row">
             <label for="theme-list" class="settings-label" data-i18n="ui.design">設計</label>
-            <select id="theme-list" aria-label="設計" data-i18n-aria-label="ui.design">
-              <option value="vol-de-nuit" data-i18n="menu.themeVolDeNuit">暗夜飛行</option>
-              <option value="inkstone" data-i18n="menu.themeInkstone">硯台</option>
-              <option value="auto" data-i18n="menu.themeAuto">自動</option>
-            </select>
+            <div class="settings-theme-group">
+              <select id="theme-list" aria-label="設計" data-i18n-aria-label="ui.design">
+                <option value="vol-de-nuit" data-i18n="menu.themeVolDeNuit">暗夜飛行</option>
+                <option value="inkstone" data-i18n="menu.themeInkstone">硯台</option>
+                <option value="auto" data-i18n="menu.themeAuto">自動</option>
+              </select>
+              <button id="btn-open-themes" type="button" class="settings-btn-secondary" title="開啟佈景主題資料夾" data-i18n-title="ui.openThemesFolder" data-i18n="ui.openThemesFolder">📂 主題目錄</button>
+            </div>
           </div>
           <div class="settings-row">
             <label for="lang-list" class="settings-label" data-i18n="ui.language">語言</label>

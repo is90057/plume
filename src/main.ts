@@ -31,7 +31,7 @@ import {
 } from "./file";
 import { getRecent } from "./recent";
 import { initCodex, openCodexFolder, restoreCodices, importCodexFolder, deleteCurrentCodex } from "./codex";
-import { currentChoice, initTheme, onThemeChange, setTheme, toggleTheme } from "./theme";
+import { currentChoice, getCustomThemes, initTheme, onThemeChange, openThemesFolder, setTheme, toggleTheme, type ThemeChoice } from "./theme";
 import { currentFont, decreaseSize, increaseSize, initReadingPrefs, resetSize, setFont } from "./reading-prefs";
 import { initStatusbar, setDirty, updateStats } from "./statusbar";
 import { initToc, updateToc } from "./toc";
@@ -48,7 +48,9 @@ initPreview(previewEl, getScrollDOM());
 initToc(document.querySelector<HTMLElement>("#toc")!, previewEl);
 initCodex(document.querySelector<HTMLElement>("#codex")!);
 initStatusbar();
-initSettings();
+initSettings({
+  onOpenThemesFolder: () => void openThemesFolder(),
+});
 onDirtyChange(setDirty); // dirty 指示：03 指針垂落 / 05 硃砂印
 onLoad((kind) => {
   scrollToTopOnNextUpdate();
@@ -121,17 +123,63 @@ const langSelect = document.querySelector<HTMLSelectElement>("#lang-list")!;
 const themeSelect = document.querySelector<HTMLSelectElement>("#theme-list");
 
 function refreshThemeUI(): void {
-  if (themeSelect) {
-    themeSelect.value = currentChoice();
+  if (!themeSelect) return;
+
+  const current = currentChoice();
+  themeSelect.options.length = 0;
+
+  const optVol = document.createElement("option");
+  optVol.value = "vol-de-nuit";
+  optVol.textContent = t("menu.themeVolDeNuit");
+  themeSelect.append(optVol);
+
+  const optInk = document.createElement("option");
+  optInk.value = "inkstone";
+  optInk.textContent = t("menu.themeInkstone");
+  themeSelect.append(optInk);
+
+  const optAuto = document.createElement("option");
+  optAuto.value = "auto";
+  optAuto.textContent = t("menu.themeAuto");
+  themeSelect.append(optAuto);
+
+  const customThemes = getCustomThemes();
+  if (customThemes.length > 0) {
+    const sepOpt = document.createElement("option");
+    sepOpt.disabled = true;
+    sepOpt.textContent = "─── " + t("ui.customThemesGroup") + " ───";
+    themeSelect.append(sepOpt);
+
+    for (const theme of customThemes) {
+      const opt = document.createElement("option");
+      opt.value = theme.id;
+      opt.textContent = theme.name;
+      themeSelect.append(opt);
+    }
   }
+
+  const sepActions = document.createElement("option");
+  sepActions.disabled = true;
+  sepActions.textContent = "──────────";
+  themeSelect.append(sepActions);
+
+  const openOpt = document.createElement("option");
+  openOpt.value = "__open_themes__";
+  openOpt.textContent = "📂 " + t("ui.openThemesFolder");
+  themeSelect.append(openOpt);
+
+  themeSelect.value = current;
 }
 
 themeSelect?.addEventListener("change", () => {
-  const choice = themeSelect.value as ThemeChoice;
-  if (choice) {
-    void setTheme(choice).then(() => {
+  const val = themeSelect.value;
+  if (val === "__open_themes__") {
+    themeSelect.value = currentChoice();
+    void openThemesFolder();
+  } else if (val) {
+    void setTheme(val).then(() => {
       update(render(getContent(), getActiveTab().path, true));
-      updateThemeMenu(choice);
+      updateThemeMenu(val);
     });
   }
 });

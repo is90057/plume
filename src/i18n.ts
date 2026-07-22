@@ -64,7 +64,11 @@ let allLocales: Record<string, any> = {
       charsAlt: "ALT",
       linesAlt: "HDG",
       renderAlt: "ETA",
-      openLocalesFolder: "開啟語言包資料夾"
+      openLocalesFolder: "開啟語言包資料夾",
+      openThemesFolder: "開啟佈景主題資料夾",
+      importTheme: "複製/匯入佈景主題…",
+      copyBuiltinTheme: "複製內建主題為範本",
+      customThemesGroup: "自訂主題"
     },
     dialogs: {
       openCodexErrorTitle: "開啟冊失敗",
@@ -215,7 +219,11 @@ let allLocales: Record<string, any> = {
       charsAlt: "ALT",
       linesAlt: "HDG",
       renderAlt: "ETA",
-      openLocalesFolder: "Open Locales Folder"
+      openLocalesFolder: "Open Locales Folder",
+      openThemesFolder: "Open Themes Folder",
+      importTheme: "Copy/Import Theme File…",
+      copyBuiltinTheme: "Copy Built-in Theme Template",
+      customThemesGroup: "Custom Themes"
     },
     dialogs: {
       openCodexErrorTitle: "Open Codex Failed",
