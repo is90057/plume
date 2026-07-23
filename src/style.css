@@ -92,13 +92,11 @@ html[data-theme="office-97"] #toolbar button:active {
 
 /* Toolbar Retro Icons for Office 97 */
 html[data-theme="office-97"] #toolbar button svg,
-html[data-theme="office-97"] #export-dropdown button svg,
 html[data-theme="office-97"] #mode-switch button svg {
   display: none !important;
 }
 
 html[data-theme="office-97"] #toolbar button::before,
-html[data-theme="office-97"] #export-dropdown button::before,
 html[data-theme="office-97"] #mode-switch button::before {
   content: "";
   width: 16px;
@@ -127,6 +125,10 @@ html[data-theme="office-97"] #btn-save::before {
 
 html[data-theme="office-97"] #btn-export::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23ffffff' stroke='%23000000' d='M2 1h8v12H2z'/%3E%3Cpath fill='%23008000' d='M8 4v3H4v2h4v3l5-4z'/%3E%3C/svg%3E");
+}
+
+html[data-theme="office-97"] #btn-toc::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cline x1='5' y1='3' x2='14' y2='3' stroke='%23000000' stroke-width='1.5'/%3E%3Cline x1='5' y1='8' x2='14' y2='8' stroke='%23000000' stroke-width='1.5'/%3E%3Cline x1='5' y1='13' x2='14' y2='13' stroke='%23000000' stroke-width='1.5'/%3E%3Ccircle cx='2' cy='3' r='1.2' fill='%23000080'/%3E%3Ccircle cx='2' cy='8' r='1.2' fill='%23000080'/%3E%3Ccircle cx='2' cy='13' r='1.2' fill='%23000080'/%3E%3C/svg%3E");
 }
 
 html[data-theme="office-97"] #btn-fullscreen::before {
@@ -404,6 +406,22 @@ html[data-theme="inkstone"] #export-dropdown .dropdown-menu button {
 html[data-theme="inkstone"] #export-dropdown .dropdown-menu button:hover {
   color: var(--fg) !important;
   background: rgba(31, 29, 26, 0.05) !important;
+}
+
+html[data-theme="office-97"] #export-dropdown .dropdown-menu {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: #ffffff #404040 #404040 #ffffff;
+  box-shadow: inset 1px 1px 0 #dfdfdf, inset -1px -1px 0 #808080, 2px 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="office-97"] #export-dropdown .dropdown-menu button::before {
+  display: none;
+}
+
+html[data-theme="office-97"] #export-dropdown .dropdown-menu button:hover {
+  background: #000080 !important;
+  color: #ffffff !important;
 }
 
 #export-dropdown.open .dropdown-menu {
