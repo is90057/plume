@@ -345,6 +345,7 @@ document.addEventListener("click", () => {
 
 document.querySelector("#btn-export-html")!.addEventListener("click", () => void exportHtml());
 document.querySelector("#btn-export-pdf")!.addEventListener("click", () => void exportPdf());
+document.querySelector("#btn-toc")!.addEventListener("click", toggleToc);
 document.querySelector("#btn-codex")!.addEventListener("click", toggleCodex);
 document.querySelector(".codex-add")!.addEventListener("click", openCodexAndReveal);
 document.querySelector(".codex-import")!.addEventListener("click", importCodexAndReveal);

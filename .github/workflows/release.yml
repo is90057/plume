@@ -64,6 +64,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_APP_VERSION: ${{ github.ref_name }}
+          VITE_APP_ARCH: ${{ matrix.rust-targets }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Plume ${{ github.ref_name }}"

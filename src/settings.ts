@@ -55,12 +55,13 @@ export function getDirectDownloadUrl(
 
   const ua = (customUA ?? (typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "")).toLowerCase();
   const platform = (customPlatform ?? (typeof navigator !== "undefined" && navigator.platform ? navigator.platform : "")).toLowerCase();
+  const buildArch = typeof __APP_ARCH__ !== "undefined" ? __APP_ARCH__.toLowerCase() : "";
 
   const isMac = platform.includes("mac") || ua.includes("mac");
   const isWin = platform.includes("win") || ua.includes("win");
 
   if (isMac) {
-    const isArm = ua.includes("arm") || ua.includes("aarch64");
+    const isArm = buildArch.includes("aarch64") || buildArch.includes("arm64") || buildArch.includes("arm");
     if (isArm) {
       const armMatch = assets.find(
         (a) => /\.dmg$/i.test(a.name) && (a.name.includes("aarch64") || a.name.includes("arm64"))
