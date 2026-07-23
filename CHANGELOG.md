@@ -6,6 +6,36 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-23
+
+### 新增
+
+- 工具列圖示化：所有工具列按鈕從文字改為 SVG 圖示 + tooltip，視覺更簡潔
+- 設定面板：新增齒輪圖示開啟的 overlay，整合佈景主題選擇、語言切換、版本顯示與更新檢查
+- 自訂主題：使用者可在 `app_local_data_dir/themes/` 放置 CSS 檔案建立自訂佈景主題。內建三套範本（翠綠森林、極光北歐、Office 97）
+- 更新檢查：設定面板內一鍵檢查 GitHub 最新版本，自動偵測平台與架構提供對應下載連結
+- 版本號注入：build 時從 `package.json`（dev）或 CI tag（release）注入 `__APP_VERSION__`，設定面板顯示真實版本
+
+### 安全
+
+- 自訂主題 CSS 淨化：`sanitize_theme_css()` 阻擋 CSS exfiltration——僅允許 `data:` URI，剝除外部 `url()` 與 `@import`（大小寫不敏感 + 註解前綴防繞過）
+- CSP 新增 `connect-src https://api.github.com`（更新檢查）、`img-src data:`（主題 retro icon）
+- `import_theme_file` 阻擋同名覆寫，保護使用者既有自訂主題
+- `build.rs` ACL 宣告與 `invoke_handler` 完全同步（11 個 command）
+
+### 修復
+
+- IPC 序列化：`CustomTheme` struct 加上 `#[serde(rename_all = "camelCase")]`，修復自訂主題靜默失敗
+- 設定面板 reduced-motion：`hideSettings()` 在 `transitionend` 不觸發時正確 fallback，避免面板永遠蓋住畫面
+- 快捷鍵 overlay reduced-motion：同上修復套用至 `shortcuts.ts`
+- 更新檢查 timeout：10 秒 AbortController 涵蓋完整 response（含 body 解析），防止卡死
+- macOS 架構偵測：改用 build-time `__APP_ARCH__`（CI 從 `matrix.rust-targets` 注入），取代 WKWebView 不可靠的 `navigator.userAgent`；Intel Mac 明確匹配 x64 DMG
+- 移除 dead code：`toggleTheme()` 函式與測試、`#btn-toc` 無效 listener
+
+### 致謝
+
+- 感謝 [@is90057](https://github.com/is90057) 貢獻 PR #17（工具列圖示重構、設定面板、自訂主題、更新檢查）
+
 ## [0.12.0] - 2026-07-18
 
 ### 新增

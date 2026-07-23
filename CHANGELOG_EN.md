@@ -6,6 +6,36 @@ This file tracks notable changes to Plume. Format inspired by [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-23
+
+### Added
+
+- Icon toolbar: all toolbar buttons replaced with SVG icons + tooltips for a cleaner look
+- Settings panel: gear icon opens an overlay with theme selection, language switching, version display, and update checker
+- Custom themes: users can place CSS files in `app_local_data_dir/themes/` to create custom themes. Three built-in templates included (Emerald Forest, Nordic Frost, Office 97)
+- Update checker: one-click check for latest GitHub release in the settings panel, with platform- and architecture-aware download links
+- Version injection: `__APP_VERSION__` injected at build time from `package.json` (dev) or CI tag (release), displayed in settings panel
+
+### Security
+
+- Custom theme CSS sanitization: `sanitize_theme_css()` blocks CSS exfiltration — only `data:` URIs allowed, external `url()` and `@import` stripped (case-insensitive + comment-prefix bypass protection)
+- CSP additions: `connect-src https://api.github.com` (update checker), `img-src data:` (theme retro icons)
+- `import_theme_file` rejects same-name overwrites, protecting existing custom themes
+- `build.rs` ACL declarations fully synced with `invoke_handler` (11 commands)
+
+### Fixed
+
+- IPC serialization: `CustomTheme` struct now has `#[serde(rename_all = "camelCase")]`, fixing silent custom theme failure
+- Settings overlay reduced-motion: `hideSettings()` falls back correctly when `transitionend` never fires
+- Shortcuts overlay reduced-motion: same fix applied to `shortcuts.ts`
+- Update checker timeout: 10s AbortController covers full response including body parsing
+- macOS architecture detection: replaced unreliable `navigator.userAgent` with build-time `__APP_ARCH__` (CI injects from `matrix.rust-targets`); explicit x64 DMG matching for Intel Mac
+- Removed dead code: `toggleTheme()` function and test, unused `#btn-toc` listener
+
+### Acknowledgements
+
+- Thanks to [@is90057](https://github.com/is90057) for contributing PR #17 (toolbar icon refactor, settings panel, custom themes, update checker)
+
 ## [0.12.0] - 2026-07-18
 
 ### Added
