@@ -553,6 +553,7 @@ fn open_locales_dir(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct CustomTheme {
     pub id: String,
     pub name: String,
@@ -748,7 +749,7 @@ fn load_custom_themes(app: tauri::AppHandle) -> Result<Vec<CustomTheme>, String>
         let _ = std::fs::write(&nordic_path, TEMPLATE_NORDIC_FROST);
     }
     let office_path = themes_dir.join("office-97.css");
-    if !office_path.exists() || !std::fs::read_to_string(&office_path).map(|c| c.contains("Toolbar Retro Icons")).unwrap_or(false) {
+    if !office_path.exists() {
         let _ = std::fs::write(&office_path, TEMPLATE_OFFICE_97);
     }
 
@@ -828,6 +829,10 @@ async fn import_theme_file(app: tauri::AppHandle) -> Result<Option<Vec<CustomThe
         .file_name()
         .ok_or_else(|| "Invalid file name".to_string())?;
     let dest_path = themes_dir.join(file_name);
+
+    if dest_path.exists() {
+        return Err(format!("Theme file '{}' already exists in themes directory", file_name.to_string_lossy()));
+    }
 
     std::fs::copy(&source_path, &dest_path).map_err(|e| e.to_string())?;
 

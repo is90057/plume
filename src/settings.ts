@@ -89,9 +89,13 @@ export async function checkForUpdates(): Promise<{
 }> {
   const currentVersion = await getAppVersion();
   try {
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), 10_000);
     const res = await fetch(GITHUB_LATEST_RELEASE_API, {
       headers: { Accept: "application/vnd.github.v3+json" },
+      signal: ac.signal,
     });
+    clearTimeout(timeoutId);
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     }
@@ -211,13 +215,17 @@ export function hideSettings(): boolean {
   const ac = new AbortController();
   hideAbort = ac;
   overlay.classList.remove("visible");
-  overlay.addEventListener(
-    "transitionend",
-    () => {
-      if (overlay) overlay.hidden = true;
-      hideAbort = null;
-    },
-    { once: true, signal: ac.signal }
-  );
+  const done = () => {
+    if (overlay) overlay.hidden = true;
+    hideAbort = null;
+  };
+  const style = getComputedStyle(overlay);
+  const dur = parseFloat(style.transitionDuration || "0");
+  if (dur <= 0) {
+    done();
+  } else {
+    overlay.addEventListener("transitionend", done, { once: true, signal: ac.signal });
+    setTimeout(() => { if (hideAbort === ac) done(); }, dur * 1000 + 100);
+  }
   return true;
 }

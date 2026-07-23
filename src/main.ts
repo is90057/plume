@@ -31,7 +31,7 @@ import {
 } from "./file";
 import { getRecent } from "./recent";
 import { initCodex, openCodexFolder, restoreCodices, importCodexFolder, deleteCurrentCodex } from "./codex";
-import { currentChoice, getCustomThemes, initTheme, onThemeChange, openThemesFolder, setTheme, toggleTheme, type ThemeChoice } from "./theme";
+import { currentChoice, getCustomThemes, initTheme, onThemeChange, openThemesFolder, setTheme } from "./theme";
 import { currentFont, decreaseSize, increaseSize, initReadingPrefs, resetSize, setFont } from "./reading-prefs";
 import { initStatusbar, setDirty, updateStats } from "./statusbar";
 import { initToc, updateToc } from "./toc";
