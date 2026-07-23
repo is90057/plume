@@ -165,12 +165,3 @@ export async function setTheme(next: ThemeChoice): Promise<void> {
   } catch {}
 }
 
-export async function toggleTheme(): Promise<ThemeChoice> {
-  const customIds = customThemes.map((t) => t.id);
-  const order: ThemeChoice[] = ["vol-de-nuit", "inkstone", "auto", ...customIds];
-  const idx = order.indexOf(choice);
-  const next = order[idx >= 0 ? (idx + 1) % order.length : 0];
-  await setTheme(next);
-  return next;
-}
-

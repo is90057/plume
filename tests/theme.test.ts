@@ -46,15 +46,6 @@ describe("theme", () => {
     expect(document.documentElement.dataset.theme).toBe("inkstone");
   });
 
-  it("test_theme_toggle_switchesAndPersists", async () => {
-    const theme = await loadThemeModule();
-    const next = await theme.toggleTheme();
-    expect(next).toBe("inkstone");
-    expect(document.documentElement.dataset.theme).toBe("inkstone");
-    expect(storeMocks.data.get("theme")).toBe("inkstone"); // 重啟後記得住
-    expect(storeMocks.fakeStore.save).toHaveBeenCalled();
-  });
-
   it("test_theme_init_corruptStore_keepsDefaultSilently", async () => {
     storeMocks.failing.value = true;
     const theme = await loadThemeModule();

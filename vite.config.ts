@@ -5,11 +5,14 @@ import pkg from "./package.json";
 const host = process.env.TAURI_DEV_HOST;
 // @ts-expect-error process is a nodejs global
 const appVersion = process.env.VITE_APP_VERSION || process.env.GITHUB_REF_NAME || pkg.version;
+// @ts-expect-error process is a nodejs global
+const appArch = process.env.VITE_APP_ARCH || process.arch;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_ARCH__: JSON.stringify(appArch),
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

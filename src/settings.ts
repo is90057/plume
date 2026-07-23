@@ -20,7 +20,7 @@ export async function getAppVersion(): Promise<string> {
   } catch {
     // Fallback for non-Tauri or dev test environment
   }
-  const fallback = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.11.0";
+  const fallback = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
   return fallback.startsWith("v") ? fallback : `v${fallback}`;
 }
 
@@ -55,18 +55,23 @@ export function getDirectDownloadUrl(
 
   const ua = (customUA ?? (typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "")).toLowerCase();
   const platform = (customPlatform ?? (typeof navigator !== "undefined" && navigator.platform ? navigator.platform : "")).toLowerCase();
+  const buildArch = typeof __APP_ARCH__ !== "undefined" ? __APP_ARCH__.toLowerCase() : "";
 
   const isMac = platform.includes("mac") || ua.includes("mac");
   const isWin = platform.includes("win") || ua.includes("win");
 
   if (isMac) {
-    const isArm = ua.includes("arm") || ua.includes("aarch64");
+    const isArm = buildArch.includes("aarch64") || buildArch.includes("arm64") || buildArch.includes("arm");
     if (isArm) {
       const armMatch = assets.find(
         (a) => /\.dmg$/i.test(a.name) && (a.name.includes("aarch64") || a.name.includes("arm64"))
       );
       if (armMatch) return armMatch.browser_download_url;
     }
+    const x64Match = assets.find(
+      (a) => /\.dmg$/i.test(a.name) && (a.name.includes("x86_64") || a.name.includes("x64"))
+    );
+    if (x64Match) return x64Match.browser_download_url;
     const macMatch = assets.find((a) => /\.dmg$/i.test(a.name) || /\.pkg$/i.test(a.name));
     if (macMatch) return macMatch.browser_download_url;
   }
@@ -89,13 +94,17 @@ export async function checkForUpdates(): Promise<{
 }> {
   const currentVersion = await getAppVersion();
   try {
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), 10_000);
     const res = await fetch(GITHUB_LATEST_RELEASE_API, {
       headers: { Accept: "application/vnd.github.v3+json" },
+      signal: ac.signal,
     });
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     }
     const data = (await res.json()) as { tag_name?: string; html_url?: string; assets?: ReleaseAsset[] };
+    clearTimeout(timeoutId);
     if (!data.tag_name) {
       throw new Error("No tag_name returned");
     }
@@ -211,13 +220,18 @@ export function hideSettings(): boolean {
   const ac = new AbortController();
   hideAbort = ac;
   overlay.classList.remove("visible");
-  overlay.addEventListener(
-    "transitionend",
-    () => {
-      if (overlay) overlay.hidden = true;
-      hideAbort = null;
-    },
-    { once: true, signal: ac.signal }
-  );
+  const done = () => {
+    ac.abort();
+    if (overlay) overlay.hidden = true;
+    hideAbort = null;
+  };
+  const style = getComputedStyle(overlay);
+  const dur = parseFloat(style.transitionDuration || "0");
+  if (dur <= 0) {
+    done();
+  } else {
+    overlay.addEventListener("transitionend", done, { once: true, signal: ac.signal });
+    setTimeout(() => { if (hideAbort === ac) done(); }, dur * 1000 + 100);
+  }
   return true;
 }

@@ -31,7 +31,7 @@ import {
 } from "./file";
 import { getRecent } from "./recent";
 import { initCodex, openCodexFolder, restoreCodices, importCodexFolder, deleteCurrentCodex } from "./codex";
-import { currentChoice, getCustomThemes, initTheme, onThemeChange, openThemesFolder, setTheme, toggleTheme, type ThemeChoice } from "./theme";
+import { currentChoice, getCustomThemes, initTheme, onThemeChange, openThemesFolder, setTheme } from "./theme";
 import { currentFont, decreaseSize, increaseSize, initReadingPrefs, resetSize, setFont } from "./reading-prefs";
 import { initStatusbar, setDirty, updateStats } from "./statusbar";
 import { initToc, updateToc } from "./toc";
@@ -345,7 +345,7 @@ document.addEventListener("click", () => {
 
 document.querySelector("#btn-export-html")!.addEventListener("click", () => void exportHtml());
 document.querySelector("#btn-export-pdf")!.addEventListener("click", () => void exportPdf());
-document.querySelector("#btn-toc")?.addEventListener("click", toggleToc);
+document.querySelector("#btn-toc")!.addEventListener("click", toggleToc);
 document.querySelector("#btn-codex")!.addEventListener("click", toggleCodex);
 document.querySelector(".codex-add")!.addEventListener("click", openCodexAndReveal);
 document.querySelector(".codex-import")!.addEventListener("click", importCodexAndReveal);

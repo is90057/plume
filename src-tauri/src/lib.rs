@@ -553,6 +553,7 @@ fn open_locales_dir(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct CustomTheme {
     pub id: String,
     pub name: String,
@@ -560,10 +561,50 @@ pub struct CustomTheme {
     pub file_path: String,
 }
 
+// Strip external url() references from theme CSS to prevent CSS exfiltration
+// (attribute selectors + background-image can leak DOM data to attacker servers).
+// Only data: URIs are allowed; @import is stripped entirely.
+fn sanitize_theme_css(css: &str) -> String {
+    let mut result = String::with_capacity(css.len());
+    let mut chars = css.char_indices().peekable();
+
+    while let Some(&(i, _)) = chars.peek() {
+        let is_url = css.get(i..i + 4).map(|s| s.eq_ignore_ascii_case("url(")).unwrap_or(false);
+        if is_url {
+            result.push_str("url(");
+            for _ in 0..4 { chars.next(); }
+            let mut inside = String::new();
+            let mut depth = 1;
+            while let Some((_, c)) = chars.next() {
+                if c == ')' { depth -= 1; if depth == 0 { break; } }
+                if c == '(' { depth += 1; }
+                inside.push(c);
+            }
+            let trimmed = inside.trim().trim_matches(|c: char| c == '"' || c == '\'');
+            if trimmed.is_empty() || trimmed.starts_with("data:") {
+                result.push_str(&inside);
+            }
+            result.push(')');
+        } else {
+            let (_, c) = chars.next().unwrap();
+            result.push(c);
+        }
+    }
+
+    result.lines()
+        .filter(|line| {
+            let stripped = line.trim_start();
+            let without_comments = stripped.trim_start_matches(|c: char| c == '/' || c == '*' || c.is_whitespace());
+            !without_comments.get(..7).map(|s| s.eq_ignore_ascii_case("@import")).unwrap_or(false)
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn parse_theme_name(content: &str, default_id: &str) -> String {
     for line in content.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("/*") && trimmed.contains("Theme Name:") {
+        if trimmed.starts_with("/*") {
             if let Some(pos) = trimmed.find("Theme Name:") {
                 let rest = &trimmed[pos + "Theme Name:".len()..];
                 let cleaned = rest.trim_matches(|c: char| c == '*' || c == '/' || c.is_whitespace());
@@ -748,7 +789,7 @@ fn load_custom_themes(app: tauri::AppHandle) -> Result<Vec<CustomTheme>, String>
         let _ = std::fs::write(&nordic_path, TEMPLATE_NORDIC_FROST);
     }
     let office_path = themes_dir.join("office-97.css");
-    if !office_path.exists() || !std::fs::read_to_string(&office_path).map(|c| c.contains("Toolbar Retro Icons")).unwrap_or(false) {
+    if !office_path.exists() {
         let _ = std::fs::write(&office_path, TEMPLATE_OFFICE_97);
     }
 
@@ -758,12 +799,12 @@ fn load_custom_themes(app: tauri::AppHandle) -> Result<Vec<CustomTheme>, String>
             let path = entry.path();
             if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("css") {
                 if let Some(id) = path.file_stem().and_then(|s| s.to_str()) {
-                    if let Ok(css_content) = std::fs::read_to_string(&path) {
-                        let name = parse_theme_name(&css_content, id);
+                    if let Ok(raw_css) = std::fs::read_to_string(&path) {
+                        let name = parse_theme_name(&raw_css, id);
                         themes.push(CustomTheme {
                             id: id.to_string(),
                             name,
-                            css_content,
+                            css_content: sanitize_theme_css(&raw_css),
                             file_path: path.to_string_lossy().into_owned(),
                         });
                     }
@@ -828,6 +869,10 @@ async fn import_theme_file(app: tauri::AppHandle) -> Result<Option<Vec<CustomThe
         .file_name()
         .ok_or_else(|| "Invalid file name".to_string())?;
     let dest_path = themes_dir.join(file_name);
+
+    if dest_path.exists() {
+        return Err(format!("Theme file '{}' already exists in themes directory", file_name.to_string_lossy()));
+    }
 
     std::fs::copy(&source_path, &dest_path).map_err(|e| e.to_string())?;
 
