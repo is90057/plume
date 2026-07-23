@@ -10,6 +10,10 @@ fn main() {
                     "load_locales",
                     "open_locales_dir",
                     "delete_codex_folder",
+                    "load_custom_themes",
+                    "open_themes_dir",
+                    "import_theme_file",
+                    "copy_builtin_theme_template",
                 ]),
         ),
     )

@@ -561,6 +561,41 @@ pub struct CustomTheme {
     pub file_path: String,
 }
 
+// Strip external url() references from theme CSS to prevent CSS exfiltration
+// (attribute selectors + background-image can leak DOM data to attacker servers).
+// Only data: URIs are allowed; @import is stripped entirely.
+fn sanitize_theme_css(css: &str) -> String {
+    let mut result = String::with_capacity(css.len());
+    let mut chars = css.char_indices().peekable();
+
+    while let Some(&(i, _)) = chars.peek() {
+        if css[i..].starts_with("url(") {
+            result.push_str("url(");
+            for _ in 0..4 { chars.next(); }
+            let mut inside = String::new();
+            let mut depth = 1;
+            while let Some((_, c)) = chars.next() {
+                if c == ')' { depth -= 1; if depth == 0 { break; } }
+                if c == '(' { depth += 1; }
+                inside.push(c);
+            }
+            let trimmed = inside.trim().trim_matches(|c: char| c == '"' || c == '\'');
+            if trimmed.is_empty() || trimmed.starts_with("data:") {
+                result.push_str(&inside);
+            }
+            result.push(')');
+        } else {
+            let (_, c) = chars.next().unwrap();
+            result.push(c);
+        }
+    }
+
+    result.lines()
+        .filter(|line| !line.trim_start().starts_with("@import"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn parse_theme_name(content: &str, default_id: &str) -> String {
     for line in content.lines() {
         let trimmed = line.trim();
@@ -759,12 +794,12 @@ fn load_custom_themes(app: tauri::AppHandle) -> Result<Vec<CustomTheme>, String>
             let path = entry.path();
             if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("css") {
                 if let Some(id) = path.file_stem().and_then(|s| s.to_str()) {
-                    if let Ok(css_content) = std::fs::read_to_string(&path) {
-                        let name = parse_theme_name(&css_content, id);
+                    if let Ok(raw_css) = std::fs::read_to_string(&path) {
+                        let name = parse_theme_name(&raw_css, id);
                         themes.push(CustomTheme {
                             id: id.to_string(),
                             name,
-                            css_content,
+                            css_content: sanitize_theme_css(&raw_css),
                             file_path: path.to_string_lossy().into_owned(),
                         });
                     }
