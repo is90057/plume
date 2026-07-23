@@ -564,7 +564,7 @@ pub struct CustomTheme {
 fn parse_theme_name(content: &str, default_id: &str) -> String {
     for line in content.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("/*") && trimmed.contains("Theme Name:") {
+        if trimmed.starts_with("/*") {
             if let Some(pos) = trimmed.find("Theme Name:") {
                 let rest = &trimmed[pos + "Theme Name:".len()..];
                 let cleaned = rest.trim_matches(|c: char| c == '*' || c == '/' || c.is_whitespace());

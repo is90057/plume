@@ -20,7 +20,7 @@ export async function getAppVersion(): Promise<string> {
   } catch {
     // Fallback for non-Tauri or dev test environment
   }
-  const fallback = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.11.0";
+  const fallback = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "0.0.0";
   return fallback.startsWith("v") ? fallback : `v${fallback}`;
 }
 
